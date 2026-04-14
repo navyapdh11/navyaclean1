@@ -16,7 +16,8 @@ export interface AuthRequest extends Request {
 
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    // Try to get token from HTTP-only cookie first, then Authorization header
+    let token = req.cookies?.accessToken || req.headers.authorization?.replace('Bearer ', '');
     if (!token) throw new AppError(401, 'Authentication required');
 
     const decoded = jwt.verify(token, env.JWT_SECRET) as {
@@ -55,7 +56,7 @@ export const authorize = (...roles: UserRole[]) => {
 
 export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    const token = req.cookies?.accessToken || req.headers.authorization?.replace('Bearer ', '');
     if (!token) return next();
 
     const decoded = jwt.verify(token, env.JWT_SECRET) as {

@@ -35,11 +35,10 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true });
         try {
+          // Backend sets HTTP-only cookies automatically on login
           const { data } = await authApi.login({ email, password });
-          const { user, accessToken, refreshToken } = data.data;
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', refreshToken);
-          set({ user, accessToken, refreshToken, isAuthenticated: true });
+          const { user } = data.data;
+          set({ user, isAuthenticated: true });
         } finally {
           set({ isLoading: false });
         }
@@ -47,24 +46,23 @@ export const useAuthStore = create<AuthState>()(
       register: async (data: any) => {
         set({ isLoading: true });
         try {
+          // Backend sets HTTP-only cookies automatically on register
           const response = await authApi.register(data);
-          const { user, accessToken, refreshToken } = response.data.data;
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', refreshToken);
-          set({ user, accessToken, refreshToken, isAuthenticated: true });
+          const { user } = response.data.data;
+          set({ user, isAuthenticated: true });
         } finally {
           set({ isLoading: false });
         }
       },
       logout: async () => {
         try { await authApi.logout(); } catch {}
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        // Backend clears HTTP-only cookies automatically on logout
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
       },
       setUser: (user: User) => set({ user }),
       fetchProfile: async () => {
         try {
+          // Backend reads token from HTTP-only cookie automatically
           const { data } = await authApi.profile();
           set({ user: data.data });
         } catch (err: any) {
@@ -74,6 +72,6 @@ export const useAuthStore = create<AuthState>()(
         }
       },
     }),
-    { name: 'auth-storage', partialize: (state) => ({ user: state.user, accessToken: state.accessToken, refreshToken: state.refreshToken, isAuthenticated: state.isAuthenticated }) }
+    { name: 'auth-storage', partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }) }
   )
 );

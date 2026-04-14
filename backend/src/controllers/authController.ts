@@ -53,7 +53,24 @@ router.post('/register',
       });
       await prisma.customer.create({ data: { userId: user.id, address: '', city: '', state: '', zipCode: '' } });
       const { accessToken, refreshToken } = generateTokens(user);
-      return res.status(201).json({ success: true, data: { user, accessToken, refreshToken }, message: 'Registration successful' });
+      
+      // Set HTTP-only cookies for security
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+      
+      return res.status(201).json({ success: true, data: { user }, message: 'Registration successful' });
     } catch (error) { next(error); }
   }
 );
@@ -86,15 +103,32 @@ router.post('/login',
       }
       await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date(), failedLoginAttempts: 0, lockoutUntil: null } });
       const { accessToken, refreshToken } = generateTokens({ id: user.id, email: user.email, role: user.role }, user.refreshTokenVersion);
-      return successResponse(res, { user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role, avatar: user.avatar }, accessToken, refreshToken }, 'Login successful');
+      
+      // Set HTTP-only cookies for security (prevents XSS token theft)
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/',
+      });
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        path: '/',
+      });
+      
+      return successResponse(res, { user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role, avatar: user.avatar } }, 'Login successful');
     } catch (error) { next(error); }
   }
 );
 
 // POST /refresh
-router.post('/refresh', async (req, res, next) => {
+router.post('/refresh', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies?.refreshToken;
     if (!refreshToken) throw new AppError(401, 'Refresh token required');
     const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as { id: string; version: number };
     const user = await prisma.user.findUnique({ where: { id: decoded.id } });
@@ -102,14 +136,35 @@ router.post('/refresh', async (req, res, next) => {
     const newVersion = user.refreshTokenVersion + 1;
     await prisma.user.update({ where: { id: user.id }, data: { refreshTokenVersion: newVersion } });
     const tokens = generateTokens({ id: user.id, email: user.email, role: user.role }, newVersion);
-    return successResponse(res, tokens, 'Token refreshed');
+    
+    res.cookie('accessToken', tokens.accessToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+    
+    return successResponse(res, null, 'Token refreshed');
   } catch (error) { next(error); }
 });
 
 // POST /logout
-router.post('/logout', authenticate, async (req: AuthRequest, res, next) => {
+router.post('/logout', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     if (req.user?.id) await prisma.user.update({ where: { id: req.user.id }, data: { lastLogoutAt: new Date(), refreshTokenVersion: { increment: 1 } } });
+    
+    // Clear HTTP-only cookies
+    res.clearCookie('accessToken', { path: '/' });
+    res.clearCookie('refreshToken', { path: '/' });
+    
     return successResponse(res, null, 'Logged out successfully');
   } catch (error) { next(error); }
 });

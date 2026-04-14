@@ -13,8 +13,8 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
-    const type = req.query.type as ServiceType | undefined;
-    const search = req.query.search as string | undefined;
+    const type = Array.isArray(req.query.type) ? (req.query.type as string[])[0] : req.query.type as ServiceType | undefined;
+    const search = Array.isArray(req.query.search) ? (req.query.search as string[])[0] : req.query.search as string | undefined;
     const { skip, take } = paginate(page, limit);
 
     const where: Record<string, any> = { isActive: true };
@@ -32,7 +32,8 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
 
 router.get('/:slug', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const service = await prisma.service.findUnique({ where: { slug: req.params.slug } });
+    const slug = Array.isArray(req.params.slug) ? req.params.slug[0] : req.params.slug;
+    const service = await prisma.service.findUnique({ where: { slug } });
     if (!service) throw new AppError(404, 'Service not found');
     return successResponse(res, service);
   } catch (error) { next(error); }
@@ -56,16 +57,18 @@ router.post('/', authenticate, authorize('ADMIN', 'MANAGER'),
 router.put('/:id', authenticate, authorize('ADMIN', 'MANAGER'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { name, description, type, duration, basePrice, features, imageUrl, isActive } = req.body;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const data: Record<string, any> = { description, type, duration, basePrice, features, imageUrl, isActive };
     if (name) { data.name = name; data.slug = generateSlug(name); }
-    const service = await prisma.service.update({ where: { id: req.params.id }, data });
+    const service = await prisma.service.update({ where: { id }, data });
     return successResponse(res, service, 'Service updated');
   } catch (error) { next(error); }
 });
 
 router.delete('/:id', authenticate, authorize('ADMIN'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    await prisma.service.delete({ where: { id: req.params.id } });
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    await prisma.service.delete({ where: { id } });
     return successResponse(res, null, 'Service deleted');
   } catch (error) { next(error); }
 });
