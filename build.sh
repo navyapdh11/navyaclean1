@@ -3,13 +3,16 @@ set -e
 
 echo "🚀 Starting Vercel deployment..."
 
-# Install root dependencies (workspace setup)
-echo "📦 Installing dependencies..."
-npm install --frozen-lockfile
+# Install root workspace dependencies (this includes all workspaces)
+echo "📦 Installing workspace dependencies..."
+npm install --workspace=@cleaning-services/frontend --include=dev
 
-# Build frontend
+# Also install root dev dependencies for tailwindcss
+echo "📦 Installing root dev dependencies..."
+npm install
+
+# Build frontend from root using workspace script
 echo "🔨 Building frontend..."
-cd frontend
-npm run build
+npm run build:frontend
 
 echo "✅ Build complete!"
