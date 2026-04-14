@@ -44,17 +44,17 @@ const SYDNEY_SUBURBS = [
 ].sort();
 
 const SERVICES = [
-  { name: 'Standard Cleaning', icon: Sparkles, price: 120, description: 'Regular home cleaning' },
-  { name: 'Deep Cleaning', icon: Droplets, price: 250, description: 'Intensive deep clean' },
-  { name: 'End of Lease Cleaning', icon: Home, price: 350, description: 'Bond-back guaranteed' },
-  { name: 'Office Cleaning', icon: Building, price: 200, description: 'Commercial spaces' },
-  { name: 'Carpet Cleaning', icon: Wind, price: 150, description: 'Steam carpet cleaning' },
-  { name: 'Window Cleaning', icon: Droplets, price: 100, description: 'Interior & exterior' },
-  { name: 'Pressure Washing', icon: Droplets, price: 200, description: 'Outdoor surfaces' },
-  { name: 'Garden Maintenance', icon: TreePine, price: 120, description: 'Lawn & garden care' },
-  { name: 'Pest Control', icon: Trash2, price: 180, description: 'Pest elimination' },
-  { name: 'Upholstery Cleaning', icon: Sofa, price: 140, description: 'Furniture cleaning' },
-  { name: 'Builders Clean', icon: Shield, price: 400, description: 'Post-construction clean' },
+  { id: 'standard', name: 'Standard Cleaning', icon: Sparkles, price: 120, description: 'Regular home cleaning' },
+  { id: 'deep', name: 'Deep Cleaning', icon: Droplets, price: 250, description: 'Intensive deep clean' },
+  { id: 'end-of-lease', name: 'End of Lease Cleaning', icon: Home, price: 350, description: 'Bond-back guaranteed' },
+  { id: 'office', name: 'Office Cleaning', icon: Building, price: 200, description: 'Commercial spaces' },
+  { id: 'carpet', name: 'Carpet Cleaning', icon: Wind, price: 150, description: 'Steam carpet cleaning' },
+  { id: 'window', name: 'Window Cleaning', icon: Droplets, price: 100, description: 'Interior & exterior' },
+  { id: 'pressure-washing', name: 'Pressure Washing', icon: Droplets, price: 200, description: 'Outdoor surfaces' },
+  { id: 'garden', name: 'Garden Maintenance', icon: TreePine, price: 120, description: 'Lawn & garden care' },
+  { id: 'pest-control', name: 'Pest Control', icon: Trash2, price: 180, description: 'Pest elimination' },
+  { id: 'upholstery', name: 'Upholstery Cleaning', icon: Sofa, price: 140, description: 'Furniture cleaning' },
+  { id: 'builders-clean', name: 'Builders Clean', icon: Shield, price: 400, description: 'Post-construction clean' },
 ];
 
 const LOCAL_CLEANERS = [
