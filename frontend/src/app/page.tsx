@@ -15,7 +15,7 @@ const features = [
 
 const services = [
   { name: 'Regular Cleaning', slug: 'regular-cleaning', price: 'From $120', desc: 'Standard cleaning service for homes and apartments' },
-  { name: 'Deep Cleaning', slug: 'end-of-lease', price: 'From $250', desc: 'Intensive cleaning for a thorough fresh start' },
+  { name: 'Deep Cleaning', slug: 'deep-cleaning', price: 'From $250', desc: 'Intensive cleaning for a thorough fresh start' },
   { name: 'Commercial Cleaning', slug: 'commercial-cleaning', price: 'From $200', desc: 'Professional cleaning for offices and commercial spaces' },
   { name: 'End of Lease Cleaning', slug: 'end-of-lease', price: 'From $350', desc: 'Bond-back guaranteed cleaning for tenants' },
   { name: 'Carpet Cleaning', slug: 'carpet-cleaning', price: 'From $150', desc: 'Professional steam carpet cleaning' },
