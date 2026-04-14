@@ -188,40 +188,24 @@ export default function BookingPage() {
     setStripeError(null);
 
     try {
-      // Create payment intent via backend
-      const paymentResponse = await fetch('/api/v1/payments/create-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: calculatePrice() * 100,
-          currency: 'aud',
-          booking: {
-            service: data.service,
-            bedrooms: data.bedrooms,
-            bathrooms: data.bathrooms,
-            propertyType: data.propertyType,
-            address: data.address,
-            suburb: data.suburb,
-            date: data.date,
-            timeSlot: data.timeSlot,
-            addons: data.addons,
-          },
-          customer: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            phone: data.phone,
-          },
-        }),
+      // Step 1: Create booking first via API
+      const { bookingsApi, paymentsApi } = await import('@/lib/api');
+      
+      const bookingResponse = await bookingsApi.create({
+        serviceId: data.service,
+        date: `${data.date}T${data.timeSlot}:00`,
+        address: `${data.address}, ${data.suburb}`,
+        notes: `Bedrooms: ${data.bedrooms}, Bathrooms: ${data.bathrooms}, Property: ${data.propertyType}`,
       });
 
-      if (!paymentResponse.ok) {
-        throw new Error('Failed to create payment intent');
-      }
+      const booking = bookingResponse.data.data;
+      const bookingId = booking.id;
 
-      const { clientSecret, bookingId } = await paymentResponse.json();
+      // Step 2: Create payment intent with bookingId
+      const paymentResponse = await paymentsApi.createIntent({ bookingId });
+      const { clientSecret, paymentIntentId } = paymentResponse.data.data;
 
-      // Confirm payment with Stripe
+      // Step 3: Confirm payment with Stripe
       const stripe = await import('@stripe/stripe-js').then((m) => m.loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!));
       if (!stripe) throw new Error('Stripe failed to load');
 
@@ -238,24 +222,8 @@ export default function BookingPage() {
         return;
       }
 
-      // Create booking
-      const bookingResponse = await fetch('/api/v1/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          totalPrice: calculatePrice(),
-          paymentStatus: 'paid',
-          clientSecret,
-        }),
-      });
-
-      if (!bookingResponse.ok) {
-        throw new Error('Failed to create booking');
-      }
-
-      const booking = await bookingResponse.json();
-      router.push(`/confirmation?bookingId=${booking.id || bookingId}`);
+      // Payment successful, redirect to confirmation
+      router.push(`/confirmation?bookingId=${bookingId}&paymentIntentId=${paymentIntentId}`);
     } catch (err) {
       setStripeError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
