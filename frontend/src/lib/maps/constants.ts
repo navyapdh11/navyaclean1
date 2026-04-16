@@ -3,6 +3,12 @@
  * Australia-specific bounds, state centers, and map styles
  */
 
+/** Coordinates interface matching google.maps.LatLngLiteral */
+interface LatLngLiteral {
+  lat: number;
+  lng: number;
+}
+
 /** Australia bounding box for map restriction */
 export const AUSTRALIA_BOUNDS = {
   north: -10.6681857235,
@@ -12,7 +18,7 @@ export const AUSTRALIA_BOUNDS = {
 } as const;
 
 /** State center coordinates */
-export const STATE_CENTERS: Record<string, google.maps.LatLngLiteral> = {
+export const STATE_CENTERS: Record<string, LatLngLiteral> = {
   NSW: { lat: -31.8402, lng: 145.6128 },
   VIC: { lat: -37.0201, lng: 144.9646 },
   QLD: { lat: -20.9176, lng: 142.7028 },
@@ -25,8 +31,9 @@ export const STATE_CENTERS: Record<string, google.maps.LatLngLiteral> = {
 
 /**
  * Get map options for a given state or Australia overview
+ * Returns a plain object — Google Maps types are only available after loadGoogleMaps()
  */
-export function getMapOptions(state?: string): google.maps.MapOptions {
+export function getMapOptions(state?: string) {
   const center = state ? STATE_CENTERS[state] ?? STATE_CENTERS.NSW : STATE_CENTERS.NSW;
 
   return {
@@ -35,14 +42,13 @@ export function getMapOptions(state?: string): google.maps.MapOptions {
     mapTypeId: 'roadmap',
     mapTypeControl: true,
     mapTypeControlOptions: {
-      style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-      position: google.maps.ControlPosition.TOP_RIGHT,
+      position: 11, // TOP_RIGHT
     },
     streetViewControl: true,
     fullscreenControl: true,
     zoomControl: true,
     zoomControlOptions: {
-      position: google.maps.ControlPosition.RIGHT_CENTER,
+      position: 13, // RIGHT_CENTER
     },
     scaleControl: true,
     rotateControl: true,

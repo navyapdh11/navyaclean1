@@ -1,30 +1,41 @@
 /**
- * Google Maps Loader with promise caching
- * Loads Google Maps JS API once per session and caches the result
- * Uses @googlemaps/js-api-loader for reliable script injection
+ * Google Maps JS API Loader
+ * Uses the v2 functional API: setOptions() + importLibrary()
+ * Ensures Google Maps is only configured once per session
  */
-import { Loader } from '@googlemaps/js-api-loader';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import { publicConfig } from '@/lib/config/public';
 
-let loaderPromise: Promise<void> | null = null;
+let initialized = false;
 
-export function loadGoogleMaps(): Promise<void> {
-  if (!loaderPromise) {
-    const loader = new Loader({
-      apiKey: publicConfig.googleMapsApiKey,
-      version: 'weekly',
-      region: publicConfig.googleMapsRegion,
+/**
+ * Initialize Google Maps and load required libraries
+ * Safe to call multiple times — only runs once
+ */
+export async function loadGoogleMaps() {
+  if (!initialized) {
+    setOptions({
+      key: publicConfig.googleMapsApiKey,
+      v: 'weekly',
       language: publicConfig.googleMapsLanguage,
-      libraries: ['places', 'geometry', 'marker'],
+      region: publicConfig.googleMapsRegion,
     });
-    loaderPromise = loader.load();
+    initialized = true;
   }
-  return loaderPromise;
+
+  // Load all libraries we need
+  await Promise.all([
+    importLibrary('places'),
+    importLibrary('geometry'),
+    importLibrary('marker'),
+  ]);
+
+  return google;
 }
 
 /**
- * Reset the cached loader (useful for testing or hot reloading)
+ * Reset initialization state (useful for testing)
  */
 export function resetGoogleMapsLoader(): void {
-  loaderPromise = null;
+  initialized = false;
 }
