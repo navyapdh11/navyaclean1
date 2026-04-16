@@ -11,7 +11,7 @@ import { PaymentStatus } from '@prisma/client';
 import { logger } from '../utils/logger';
 
 const router = Router();
-const stripe = env.STRIPE_SECRET_KEY ? new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' }) : null;
+const stripe = env.STRIPE_SECRET_KEY ? new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-02-24.acacia' }) : null;
 
 // Webhook event deduplication - in-memory cache with TTL
 const processedEvents = new Map<string, number>();

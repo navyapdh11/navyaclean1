@@ -37,7 +37,7 @@ router.post('/', authenticate, reviewLimiter,
           comment: req.body.comment,
           isPublished: false, // Requires admin approval before public display
         },
-        include: { customer: { select: { firstName: true, lastName: true, avatar: true } } },
+        include: { customer: { include: { user: { select: { firstName: true, lastName: true, avatar: true } } } } },
       });
 
       return successResponse(res, review, 'Review submitted and pending moderation', 201);
@@ -45,15 +45,16 @@ router.post('/', authenticate, reviewLimiter,
   }
 );
 
-router.get('/service/:serviceId', async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/service/:serviceId', async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const page = parseInt(_req.query.page as string) || 1;
+    const limit = parseInt(_req.query.limit as string) || 10;
     const { skip, take } = paginate(page, limit);
+    const serviceId = Array.isArray(_req.params.serviceId) ? _req.params.serviceId[0] : _req.params.serviceId;
     // Only show published reviews to the public
     const [reviews, total] = await Promise.all([
-      prisma.review.findMany({ where: { booking: { serviceId: req.params.serviceId }, isPublished: true }, skip, take, include: { customer: { select: { firstName: true, lastName: true, avatar: true } } }, orderBy: { createdAt: 'desc' } }),
-      prisma.review.count({ where: { booking: { serviceId: req.params.serviceId }, isPublished: true } }),
+      prisma.review.findMany({ where: { booking: { serviceId }, isPublished: true }, skip, take, include: { customer: { include: { user: { select: { firstName: true, lastName: true, avatar: true } } } } }, orderBy: { createdAt: 'desc' } }),
+      prisma.review.count({ where: { booking: { serviceId }, isPublished: true } }),
     ]);
     return paginatedResponse(res, reviews, page, limit, total);
   } catch (error) { next(error); }
@@ -68,10 +69,11 @@ router.put('/admin/:id/moderate', authenticate, authorize('ADMIN', 'MANAGER'),
       if (!errors.isEmpty()) throw new AppError(400, 'Validation failed');
 
       const { isPublished } = req.body;
+      const reviewId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
       const review = await prisma.review.update({
-        where: { id: req.params.id },
+        where: { id: reviewId },
         data: { isPublished },
-        include: { customer: { select: { firstName: true, lastName: true } } },
+        include: { customer: { include: { user: { select: { firstName: true, lastName: true } } } } },
       });
 
       // If approved, update staff average rating
@@ -89,13 +91,13 @@ router.put('/admin/:id/moderate', authenticate, authorize('ADMIN', 'MANAGER'),
 );
 
 // Admin: list pending reviews
-router.get('/admin/pending', authenticate, authorize('ADMIN', 'MANAGER'), async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/admin/pending', authenticate, authorize('ADMIN', 'MANAGER'), async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const page = parseInt(_req.query.page as string) || 1;
+    const limit = parseInt(_req.query.limit as string) || 20;
     const { skip, take } = paginate(page, limit);
     const [reviews, total] = await Promise.all([
-      prisma.review.findMany({ where: { isPublished: false }, skip, take, include: { customer: { select: { firstName: true, lastName: true } }, booking: { include: { service: true } } }, orderBy: { createdAt: 'desc' } }),
+      prisma.review.findMany({ where: { isPublished: false }, skip, take, include: { customer: { include: { user: { select: { firstName: true, lastName: true } } } }, booking: { include: { service: true } } }, orderBy: { createdAt: 'desc' } }),
       prisma.review.count({ where: { isPublished: false } }),
     ]);
     return paginatedResponse(res, reviews, page, limit, total);
