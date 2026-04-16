@@ -9,7 +9,7 @@ const authRoutes = ['/login', '/register'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get('auth-token')?.value;
+  const token = request.cookies.get('accessToken')?.value;
 
   // Check if trying to access protected routes without authentication
   if (protectedRoutes.some((route) => pathname.startsWith(route))) {

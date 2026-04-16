@@ -1,0 +1,28 @@
+{
+  "type": "web_service",
+  "name": "cleanpro-backend",
+  "ownerId": "tea-d796f6vkijhs738pb840",
+  "repo": {
+    "repo": "https://github.com/navyapdh11/cleaning-services-enterprise-2026",
+    "branch": "main",
+    "rootDir": "backend"
+  },
+  "autoDeploy": "yes",
+  "serviceDetails": {
+    "env": "node",
+    "buildCommand": "npm install && npx prisma generate && npx tsc",
+    "startCommand": "node dist/server.js",
+    "healthCheckPath": "/health",
+    "plan": "free",
+    "region": "oregon"
+  },
+  "envVars": [
+    {"key": "NODE_ENV", "value": "production"},
+    {"key": "JWT_SECRET", "generateValue": true},
+    {"key": "JWT_REFRESH_SECRET", "generateValue": true},
+    {"key": "JWT_EXPIRES_IN", "value": "7d"},
+    {"key": "JWT_REFRESH_EXPIRES_IN", "value": "30d"},
+    {"key": "FRONTEND_URL", "value": "https://cleaning-services-enterprise-2026.vercel.app"},
+    {"key": "LOG_LEVEL", "value": "info"}
+  ]
+}
