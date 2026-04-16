@@ -20,7 +20,7 @@
     {"key": "NODE_ENV", "value": "production"},
     {"key": "JWT_SECRET", "generateValue": true},
     {"key": "JWT_REFRESH_SECRET", "generateValue": true},
-    {"key": "JWT_EXPIRES_IN", "value": "7d"},
+    {"key": "JWT_EXPIRES_IN", "value": "15m"},
     {"key": "JWT_REFRESH_EXPIRES_IN", "value": "30d"},
     {"key": "LOG_LEVEL", "value": "info"}
   ]

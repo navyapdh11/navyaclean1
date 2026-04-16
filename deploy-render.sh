@@ -14,7 +14,7 @@ echo "Creating backend service..."
 BACKEND=$(curl -s -X POST "https://api.render.com/v1/services" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"type\":\"web_service\",\"name\":\"cleanpro-backend\",\"ownerId\":\"$OWNER_ID\",\"repo\":\"$REPO\",\"autoDeploy\":\"yes\",\"branch\":\"$BRANCH\",\"rootDir\":\"backend\",\"serviceDetails\":{\"env\":\"node\",\"plan\":\"free\",\"region\":\"oregon\",\"healthCheckPath\":\"/health\",\"envSpecificDetails\":{\"buildCommand\":\"npm install && npx prisma generate && npx tsc\",\"startCommand\":\"node dist/server.js\"}},\"envVars\":[{\"key\":\"NODE_ENV\",\"value\":\"production\"},{\"key\":\"JWT_SECRET\",\"generateValue\":true},{\"key\":\"JWT_REFRESH_SECRET\",\"generateValue\":true},{\"key\":\"JWT_EXPIRES_IN\",\"value\":\"7d\"},{\"key\":\"JWT_REFRESH_EXPIRES_IN\",\"value\":\"30d\"},{\"key\":\"LOG_LEVEL\",\"value\":\"info\"}]}")
+  -d "{\"type\":\"web_service\",\"name\":\"cleanpro-backend\",\"ownerId\":\"$OWNER_ID\",\"repo\":\"$REPO\",\"autoDeploy\":\"yes\",\"branch\":\"$BRANCH\",\"rootDir\":\"backend\",\"serviceDetails\":{\"env\":\"node\",\"plan\":\"free\",\"region\":\"oregon\",\"healthCheckPath\":\"/health\",\"envSpecificDetails\":{\"buildCommand\":\"npm install && npx prisma generate && npx tsc\",\"startCommand\":\"node dist/server.js\"}},\"envVars\":[{\"key\":\"NODE_ENV\",\"value\":\"production\"},{\"key\":\"JWT_SECRET\",\"generateValue\":true},{\"key\":\"JWT_REFRESH_SECRET\",\"generateValue\":true},{\"key\":\"JWT_EXPIRES_IN\",\"value\":\"15m\"},{\"key\":\"JWT_REFRESH_EXPIRES_IN\",\"value\":\"30d\"},{\"key\":\"LOG_LEVEL\",\"value\":\"info\"}]}")
 
 BACKEND_URL=$(echo "$BACKEND" | jq -r '.service.serviceDetails.url')
 echo "✅ Backend: $BACKEND_URL"
