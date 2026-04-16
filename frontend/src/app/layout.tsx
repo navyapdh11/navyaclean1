@@ -75,7 +75,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     abn: '12 345 678 901',
     serviceAreas: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'],
     states: ['NSW', 'VIC', 'QLD', 'WA', 'SA'],
-    reviews: { rating: 4.9, count: 4800 },
   });
 
   return (

@@ -1,5 +1,8 @@
 // AU-compliant structured data for local business SEO
-// Fixed: No spaces in JSON-LD keys (original doc had " @context" which is invalid)
+// Fixed for Google Rich Results validation:
+// - Removed fake aggregateRating (requires real review content on page)
+// - bestRating/worstRating are numbers, not strings
+// - All fields match Google's structured data guidelines
 
 export function generateLocalBusinessSchema({
   businessName = 'CleanPro Enterprise',
@@ -7,14 +10,12 @@ export function generateLocalBusinessSchema({
   phone = '+61 1300 123 456',
   serviceAreas = ['Sydney', 'Melbourne', 'Brisbane'],
   states = ['NSW', 'VIC', 'QLD'],
-  reviews = { rating: 4.9, count: 4800 },
 }: {
   businessName?: string;
   abn?: string;
   phone?: string;
   serviceAreas?: string[];
   states?: string[];
-  reviews?: { rating: number; count: number };
 } = {}) {
   return {
     "@context": "https://schema.org",
@@ -38,48 +39,20 @@ export function generateLocalBusinessSchema({
     // AU-specific: ABN disclosure per ASIC guidelines
     vatID: `ABN ${abn}`,
     areaServed: serviceAreas.map(area => ({
-      "@type": "AdministrativeArea",
+      "@type": "City",
       name: area,
     })),
-    // Australian Consumer Law: guarantee disclosure
-    hasOfferCatalog: {
-      "@type": "OfferCatalog",
-      name: "Cleaning Services",
-      itemListElement: [
-        {
-          "@type": "Offer",
-          itemOffered: {
-            "@type": "Service",
-            name: "Bond-Back Guarantee",
-            description: "100% refund or free re-clean if not satisfied",
-            areaServed: ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"],
-          },
-          priceSpecification: {
-            "@type": "PriceSpecification",
-            priceCurrency: "AUD",
-            price: "0",
-            description: "Included with End of Lease service",
-          },
-        },
-      ],
-    },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: reviews.rating,
-      reviewCount: reviews.count,
-      bestRating: "5",
-      worstRating: "1",
-    },
-    // State-specific compliance badges
+    // State-specific compliance
     additionalProperty: states.map(state => ({
       "@type": "PropertyValue",
-      name: `${state} Compliance`,
+      name: `${state} Service Area`,
       value: `WHS Act 2011 (${state}) Compliant`,
     })),
   };
 }
 
 // Service-specific schema for each service page
+// Google Rich Results compliant
 export function generateServiceSchema({
   name,
   description,
@@ -118,7 +91,7 @@ export function generateServiceSchema({
   };
 }
 
-// FAQ schema for service pages
+// FAQ schema for service pages — Google Rich Results compliant
 export function generateFAQSchema(questions: { question: string; answer: string }[]) {
   return {
     "@context": "https://schema.org",
@@ -134,7 +107,8 @@ export function generateFAQSchema(questions: { question: string; answer: string 
   };
 }
 
-// Review aggregate schema
+// Review aggregate schema — ONLY use on pages that display reviews
+// bestRating/worstRating are numbers (not strings) per Google guidelines
 export function generateReviewSchema({
   rating,
   count,
@@ -151,7 +125,7 @@ export function generateReviewSchema({
     "@type": "AggregateRating",
     ratingValue: rating,
     reviewCount: count,
-    bestRating: String(bestRating),
-    worstRating: String(worstRating),
+    bestRating: bestRating,
+    worstRating: worstRating,
   };
 }

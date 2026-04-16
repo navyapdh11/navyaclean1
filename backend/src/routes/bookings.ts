@@ -9,6 +9,73 @@ import { BookingStatus, ServiceType } from '@prisma/client';
 
 const router = Router();
 
+// ===== ADMIN ROUTES (must be before parameterized routes) =====
+
+router.get('/admin/all', authenticate, authorize('ADMIN', 'MANAGER'), async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const status = req.query.status as BookingStatus | undefined;
+    const { skip, take } = paginate(page, limit);
+    const where: Record<string, any> = {};
+    if (status) where.status = status;
+    const [bookings, total] = await Promise.all([
+      prisma.booking.findMany({ where, skip, take, include: { customer: { include: { user: true } }, service: true, staff: { include: { user: true } } }, orderBy: { date: 'desc' } }),
+      prisma.booking.count({ where }),
+    ]);
+    return paginatedResponse(res, bookings, page, limit, total);
+  } catch (error) { next(error); }
+});
+
+router.put('/admin/:id/assign', authenticate, authorize('ADMIN', 'MANAGER'),
+  [body('staffId').isUUID()],
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) throw new AppError(400, 'Validation failed');
+
+      const { staffId } = req.body;
+      const bookingId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        select: { startTime: true, endTime: true, status: true },
+      });
+
+      if (!booking) throw new AppError(404, 'Booking not found');
+
+      const staff = await prisma.staff.findUnique({ where: { id: staffId } });
+      if (!staff || !staff.isActive) throw new AppError(400, 'Selected staff unavailable');
+
+      const overlappingBooking = await prisma.booking.findFirst({
+        where: {
+          staffId,
+          id: { not: bookingId },
+          status: { in: ['CONFIRMED', 'IN_PROGRESS', 'PENDING'] },
+          OR: [
+            { startTime: { lte: booking.startTime }, endTime: { gt: booking.startTime } },
+            { startTime: { lt: booking.endTime }, endTime: { gte: booking.endTime } },
+            { startTime: { gte: booking.startTime }, endTime: { lte: booking.endTime } },
+          ],
+        },
+      });
+
+      if (overlappingBooking) {
+        throw new AppError(409, 'Staff member has a scheduling conflict. Please choose a different staff member', 'SCHEDULING_CONFLICT');
+      }
+
+      const updated = await prisma.booking.update({
+        where: { id: bookingId },
+        data: { staffId, status: 'CONFIRMED' },
+        include: { staff: { include: { user: true } } },
+      });
+      return successResponse(res, updated, 'Staff assigned successfully');
+    } catch (error) { next(error); }
+  }
+);
+
+// ===== PARAMETERIZED ROUTES =====
+
 router.get('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -133,72 +200,5 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response, next: N
     return successResponse(res, booking);
   } catch (error) { next(error); }
 });
-
-// Admin routes - require ADMIN or MANAGER role
-router.get('/admin/all', authenticate, authorize('ADMIN', 'MANAGER'), async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const status = req.query.status as BookingStatus | undefined;
-    const { skip, take } = paginate(page, limit);
-    const where: Record<string, any> = {};
-    if (status) where.status = status;
-    const [bookings, total] = await Promise.all([
-      prisma.booking.findMany({ where, skip, take, include: { customer: { include: { user: true } }, service: true, staff: { include: { user: true } } }, orderBy: { date: 'desc' } }),
-      prisma.booking.count({ where }),
-    ]);
-    return paginatedResponse(res, bookings, page, limit, total);
-  } catch (error) { next(error); }
-});
-
-router.put('/admin/:id/assign', authenticate, authorize('ADMIN', 'MANAGER'),
-  [body('staffId').isUUID()],
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) throw new AppError(400, 'Validation failed');
-
-      const { staffId } = req.body;
-      const bookingId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      
-      // Get the booking to check time overlap
-      const booking = await prisma.booking.findUnique({
-        where: { id: bookingId },
-        select: { startTime: true, endTime: true, status: true },
-      });
-      
-      if (!booking) throw new AppError(404, 'Booking not found');
-      
-      // Validate staff exists
-      const staff = await prisma.staff.findUnique({ where: { id: staffId } });
-      if (!staff || !staff.isActive) throw new AppError(400, 'Selected staff unavailable');
-      
-      // OVERLAP PREVENTION: Check for scheduling conflicts
-      const overlappingBooking = await prisma.booking.findFirst({
-        where: {
-          staffId,
-          id: { not: bookingId }, // Exclude current booking
-          status: { in: ['CONFIRMED', 'IN_PROGRESS', 'PENDING'] },
-          OR: [
-            { startTime: { lte: booking.startTime }, endTime: { gt: booking.startTime } },
-            { startTime: { lt: booking.endTime }, endTime: { gte: booking.endTime } },
-            { startTime: { gte: booking.startTime }, endTime: { lte: booking.endTime } },
-          ],
-        },
-      });
-
-      if (overlappingBooking) {
-        throw new AppError(409, 'Staff member has a scheduling conflict. Please choose a different staff member', 'SCHEDULING_CONFLICT');
-      }
-      
-      const updated = await prisma.booking.update({
-        where: { id: bookingId },
-        data: { staffId, status: 'CONFIRMED' },
-        include: { staff: { include: { user: true } } },
-      });
-      return successResponse(res, updated, 'Staff assigned successfully');
-    } catch (error) { next(error); }
-  }
-);
 
 export default router;
