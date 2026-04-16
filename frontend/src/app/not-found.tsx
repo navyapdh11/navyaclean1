@@ -13,7 +13,7 @@ export default function NotFound() {
           <FileQuestion className="w-20 h-20 mx-auto mb-6 text-neutral-400" />
           <h2 className="text-3xl font-bold text-neutral-900 mb-4">Page Not Found</h2>
           <p className="text-neutral-600 mb-8">
-            The page you're looking for doesn't exist or has been moved.
+            This page does not exist or has been moved.
           </p>
           
           <Link

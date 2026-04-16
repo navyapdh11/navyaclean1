@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="text-lg font-bold mb-4">CleanPro Enterprise</h3>
-            <p className="text-neutral-400">Premium cleaning services for residential and commercial spaces.</p>
+            <p className="text-neutral-400">Cleaning for homes and offices across Sydney.</p>
             <div className="flex gap-4 mt-4">
               <Facebook className="w-5 h-5 text-neutral-400 hover:text-white cursor-pointer" />
               <Twitter className="w-5 h-5 text-neutral-400 hover:text-white cursor-pointer" />

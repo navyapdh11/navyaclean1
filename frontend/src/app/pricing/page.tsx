@@ -11,7 +11,7 @@ const plans = [
   {
     name: 'Basic Clean',
     price: 120,
-    description: 'Perfect for regular maintenance cleaning',
+    description: 'For regular cleaning',
     features: [
       'Kitchen cleaning',
       'Bathroom sanitization',
@@ -24,7 +24,7 @@ const plans = [
   {
     name: 'Deep Clean',
     price: 250,
-    description: 'Intensive cleaning for a fresh start',
+    description: 'A thorough clean from top to bottom',
     features: [
       'Everything in Basic',
       'Inside appliance cleaning',
@@ -38,7 +38,7 @@ const plans = [
   {
     name: 'Premium Clean',
     price: 450,
-    description: 'The ultimate cleaning experience',
+    description: 'Our most thorough clean',
     features: [
       'Everything in Deep Clean',
       'Inside oven cleaning',
@@ -75,7 +75,7 @@ export default function PricingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-6xl font-bold mb-6"
           >
-            Transparent Pricing
+            Clear Pricing
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -83,7 +83,7 @@ export default function PricingPage() {
             transition={{ delay: 0.1 }}
             className="text-xl md:text-2xl text-neutral-100 max-w-3xl mx-auto"
           >
-            No hidden fees. Choose the plan that works for you.
+            No hidden fees. Pick the plan that fits.
           </motion.p>
         </div>
       </section>
@@ -140,7 +140,7 @@ export default function PricingPage() {
       {/* Add-ons */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-neutral-900 mb-8 text-center">Available Add-ons</h2>
+          <h2 className="text-4xl font-bold text-neutral-900 mb-8 text-center">Add-ons</h2>
           <div className="grid md:grid-cols-2 gap-4">
             {addons.map((addon) => (
               <div

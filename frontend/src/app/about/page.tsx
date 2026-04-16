@@ -6,16 +6,16 @@ import { Footer } from '@/components/layout/Footer';
 import { Shield, Award, Users, Star, Clock, Heart } from 'lucide-react';
 
 const stats = [
-  { icon: Users, label: 'Happy Customers', value: '10,000+' },
+  { icon: Users, label: 'Customers Served', value: '10,000+' },
   { icon: Star, label: 'Average Rating', value: '4.9/5' },
-  { icon: Clock, label: 'Years of Service', value: '8+' },
-  { icon: Award, label: 'Awards Won', value: '15' },
+  { icon: Clock, label: 'Years in Business', value: '8+' },
+  { icon: Award, label: 'Industry Awards', value: '15' },
 ];
 
 const values = [
-  { icon: Shield, title: 'Trust & Reliability', description: 'Fully insured and bonded for your peace of mind.' },
-  { icon: Heart, title: 'Customer First', description: 'Your satisfaction is our top priority.' },
-  { icon: Award, title: 'Quality Guaranteed', description: '100% satisfaction guarantee on all services.' },
+  { icon: Shield, title: 'Trust', description: 'Fully insured and bonded on every job.' },
+  { icon: Heart, title: 'Customer Focus', description: 'If you are not happy, we come back and fix it.' },
+  { icon: Award, title: 'Guaranteed Results', description: 'Every service backed by our satisfaction guarantee.' },
 ];
 
 export default function AboutPage() {
@@ -39,7 +39,7 @@ export default function AboutPage() {
             transition={{ delay: 0.1 }}
             className="text-xl md:text-2xl text-neutral-100 max-w-3xl mx-auto"
           >
-            Transforming spaces, one clean at a time since 2018
+            Transforming homes and offices across the region since 2018
           </motion.p>
         </div>
       </section>
@@ -69,19 +69,16 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-4xl font-bold text-neutral-900 mb-8 text-center">Our Story</h2>
           <p className="text-lg text-neutral-700 leading-relaxed mb-6">
-            Founded in 2018, CleanPro Enterprise started with a simple mission: to provide exceptional cleaning services
-            that exceed expectations. What began as a small local operation has grown into a trusted enterprise serving
-            thousands of residential and commercial customers across the region.
+            CleanPro started in 2018 with a simple idea: cleaning done right. A small team of cleaners
+            in Sydney has grown into a service covering the entire region, handling both homes and businesses.
           </p>
           <p className="text-lg text-neutral-700 leading-relaxed mb-6">
-            Our team of professionally trained and background-checked cleaners are committed to delivering consistent,
-            high-quality results. We use eco-friendly products and proven techniques to ensure your space is not just
-            clean, but truly pristine.
+            Every cleaner on our team is trained and background-checked. We use eco-friendly products
+            because they work well and are safer for your family and pets.
           </p>
           <p className="text-lg text-neutral-700 leading-relaxed">
-            Today, we're proud to be one of the leading cleaning service providers, with a 4.9-star rating and over
-            10,000 satisfied customers. Our continuous investment in training, technology, and customer service
-            ensures that every CleanPro experience exceeds your expectations.
+            We have completed over 10,000 bookings and hold a 4.9-star average. We keep investing in
+            better training and simpler booking tools so the experience gets easier each year.
           </p>
         </div>
       </section>

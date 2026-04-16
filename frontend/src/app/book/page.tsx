@@ -268,7 +268,7 @@ export default function BookingPage() {
             <span>Service</span>
             <span>Details</span>
             <span>Date</span>
-            <span>Add-ons</span>
+            <span>Extras</span>
             <span>Payment</span>
           </div>
         </div>
@@ -297,7 +297,7 @@ export default function BookingPage() {
                 transition={{ duration: 0.3 }}
                 className="bg-white rounded-2xl shadow-xl p-8"
               >
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Select Your Service</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Choose a Service</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {SERVICES.map((service) => {
                     const Icon = service.icon;
@@ -527,7 +527,7 @@ export default function BookingPage() {
                 className="bg-white rounded-2xl shadow-xl p-8"
               >
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Add-ons</h2>
-                <p className="text-gray-600 mb-6">Enhance your cleaning service with these optional extras</p>
+                <p className="text-gray-600 mb-6">Add extras to your cleaning service</p>
                 <div className="space-y-4">
                   {ADDONS.map((addon) => {
                     const isSelected = selectedAddons?.includes(addon.id);
@@ -624,7 +624,7 @@ export default function BookingPage() {
                 <div className="bg-gray-50 rounded-xl p-6 mb-6">
                   <div className="flex items-center gap-3 mb-4">
                     <CreditCard className="w-5 h-5 text-gray-600" />
-                    <h3 className="font-semibold">Card Payment</h3>
+                    <h3 className="font-semibold">Pay by Card</h3>
                   </div>
                   <div id="card-element" className="p-4 bg-white border rounded-lg">
                     {/* Stripe Elements will mount here */}
@@ -639,7 +639,7 @@ export default function BookingPage() {
 
                 {/* Order Summary */}
                 <div className="bg-gray-50 rounded-xl p-6">
-                  <h3 className="font-semibold mb-4">Order Summary</h3>
+                  <h3 className="font-semibold mb-4">Summary</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>{SERVICES.find((s) => s.id === selectedService)?.name}</span>

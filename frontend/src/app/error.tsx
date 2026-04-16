@@ -26,7 +26,7 @@ export default function Error({
           <AlertTriangle className="w-20 h-20 mx-auto mb-6 text-red-500" />
           <h2 className="text-3xl font-bold text-neutral-900 mb-4">Something went wrong</h2>
           <p className="text-neutral-600 mb-8">
-            We apologize for the inconvenience. An unexpected error has occurred.
+            Sorry about this. Something unexpected went wrong.
           </p>
           
           {process.env.NODE_ENV === 'development' && (

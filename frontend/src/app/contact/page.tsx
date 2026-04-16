@@ -24,7 +24,7 @@ export default function ContactPage() {
     // Simulate form submission
     await new Promise((resolve) => setTimeout(resolve, 1000));
     
-    toast.success('Message sent successfully! We\'ll get back to you soon.');
+    toast.success('Message sent. We will reply within 24 hours.');
     setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
     setIsSubmitting(false);
   };
@@ -48,7 +48,7 @@ export default function ContactPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-6xl font-bold mb-6"
           >
-            Get In Touch
+            Contact Us
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -56,7 +56,7 @@ export default function ContactPage() {
             transition={{ delay: 0.1 }}
             className="text-xl md:text-2xl text-neutral-100 max-w-3xl mx-auto"
           >
-            We're here to answer your questions and provide exceptional service
+            Questions or booking requests? We are here to help.
           </motion.p>
         </div>
       </section>

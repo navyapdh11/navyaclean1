@@ -93,7 +93,7 @@ export function Header() {
             ) : (
               <>
                 <Link href="/login" className="btn-secondary">Sign In</Link>
-                <Link href="/register" className="btn-primary">Get Started</Link>
+                <Link href="/register" className="btn-primary">Sign Up</Link>
               </>
             )}
           </div>
@@ -132,7 +132,7 @@ export function Header() {
               ) : (
                 <>
                   <Link href="/login" className="block btn-secondary w-full text-center" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
-                  <Link href="/register" className="block btn-primary w-full text-center" onClick={() => setMobileMenuOpen(false)}>Get Started</Link>
+                  <Link href="/register" className="block btn-primary w-full text-center" onClick={() => setMobileMenuOpen(false)}>Sign Up</Link>
                 </>
               )}
             </div>

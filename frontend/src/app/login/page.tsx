@@ -20,10 +20,10 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(email, password);
-      toast.success('Welcome back!');
+      toast.success('Signed in');
       router.push('/dashboard');
     } catch (err: any) {
-      const message = err.response?.data?.error?.message || err.message || 'Login failed. Please check your credentials and try again.';
+      const message = err.response?.data?.error?.message || err.message || 'Login failed. Check your email and password.';
       setError(message);
       toast.error(message);
     }
@@ -36,8 +36,8 @@ export default function LoginPage() {
           <div className="inline-flex w-16 h-16 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl items-center justify-center mb-4">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold">Welcome Back</h1>
-          <p className="text-neutral-600 mt-2">Sign in to your CleanPro account</p>
+          <h1 className="text-3xl font-bold">Sign In</h1>
+          <p className="text-neutral-600 mt-2">Enter your email and password</p>
         </div>
         <form onSubmit={handleSubmit} className="card space-y-6">
           {error && (

@@ -202,7 +202,7 @@ export default function ServicesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Cleaning Services</h1>
           <p className="text-xl text-primary-100 max-w-3xl mx-auto">
-            Professional cleaning solutions for every need. Transparent pricing, experienced teams, and 100% satisfaction guaranteed.
+            Cleaning for homes and offices. Clear prices, experienced teams.
           </p>
         </div>
       </section>
@@ -266,13 +266,13 @@ export default function ServicesPage() {
       {/* Why Choose Us */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">Why Choose CleanPro?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Why Customers Pick CleanPro</h2>
           <div className="grid md:grid-cols-4 gap-8">
             {[
-              { icon: Star, title: '5-Star Rated', desc: 'Trusted by thousands of happy customers' },
-              { icon: Shield, title: 'Insured & Bonded', desc: 'Full coverage for your peace of mind' },
-              { icon: Clock, title: 'Flexible Scheduling', desc: 'Book online 24/7, same-day available' },
-              { icon: Sparkles, title: 'Eco-Friendly', desc: 'Safe products for your family & pets' },
+              { icon: Star, title: 'Top Rated', desc: 'Over 10,000 bookings at 4.9 stars' },
+              { icon: Shield, title: 'Insured & Bonded', desc: 'Full coverage on every job' },
+              { icon: Clock, title: 'Flexible Booking', desc: 'Book online any time, same-day available' },
+              { icon: Sparkles, title: 'Eco-Friendly', desc: 'Safe products for families and pets' },
             ].map((item, i) => (
               <motion.div
                 key={item.title}
@@ -294,8 +294,8 @@ export default function ServicesPage() {
       {/* CTA */}
       <section className="py-16 bg-neutral-900 text-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready for a Spotless Space?</h2>
-          <p className="text-xl text-neutral-300 mb-8">Book your cleaning today and get 10% off your first service.</p>
+          <h2 className="text-3xl font-bold mb-4">Book Your Clean Today</h2>
+          <p className="text-xl text-neutral-300 mb-8">Get 10% off your first service.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/book" className="btn bg-primary-600 hover:bg-primary-700 text-lg px-8 py-3">Book Now <ArrowRight className="ml-2 w-5 h-5" /></Link>
             <Link href="/contact" className="btn border-2 border-neutral-600 hover:border-white text-lg px-8 py-3">Get a Quote</Link>

@@ -17,7 +17,7 @@ export default function RegisterPage() {
     e.preventDefault();
     try {
       await register(form);
-      toast.success('Account created! Welcome to CleanPro.');
+      toast.success('Account created');
       router.push('/dashboard');
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || 'Registration failed');
@@ -32,7 +32,7 @@ export default function RegisterPage() {
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold">Create Account</h1>
-          <p className="text-neutral-600 mt-2">Join CleanPro Enterprise today</p>
+          <p className="text-neutral-600 mt-2">Fill in your details to get started</p>
         </div>
         <form onSubmit={handleSubmit} className="card space-y-4">
           <div className="grid grid-cols-2 gap-4">

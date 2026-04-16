@@ -7,10 +7,10 @@ import { Sparkles, Shield, Clock, Star, ArrowRight, CheckCircle } from 'lucide-r
 import Link from 'next/link';
 
 const features = [
-  { icon: Sparkles, title: 'Premium Quality', description: 'Eco-friendly products and trained professionals for spotless results every time.' },
-  { icon: Shield, title: 'Insured & Bonded', description: 'Full insurance coverage for your peace of mind during every service.' },
-  { icon: Clock, title: 'Flexible Scheduling', description: 'Book online 24/7 with same-day service availability in your area.' },
-  { icon: Star, title: '5-Star Rated', description: 'Trusted by thousands of happy customers with consistent excellence.' },
+  { icon: Sparkles, title: 'Quality Cleaning', description: 'Trained staff and eco-friendly products for consistent results.' },
+  { icon: Shield, title: 'Insured & Bonded', description: 'Every service covered by full insurance.' },
+  { icon: Clock, title: 'Flexible Scheduling', description: 'Book online any time, with same-day service available.' },
+  { icon: Star, title: 'Top Rated', description: 'Over 10,000 bookings and a 4.9-star average.' },
 ];
 
 const services = [
@@ -39,11 +39,11 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Premium Cleaning<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-primary-200">Services for Every Space</span>
+              Cleaning Services<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-primary-200">for Homes and Businesses</span>
             </h1>
             <p className="text-xl md:text-2xl text-primary-100 mb-8 max-w-2xl">
-              Professional, reliable, and eco-friendly cleaning solutions. Book in seconds, enjoy for years.
+              Book a cleaner in seconds. Reliable teams, fair pricing, and a results you can see.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/register" className="btn bg-white text-primary-700 hover:bg-primary-50 text-lg px-8 py-3">
@@ -62,8 +62,8 @@ export default function HomePage() {
       <section className="py-20 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose CleanPro?</h2>
-            <p className="text-neutral-600 text-lg max-w-2xl mx-auto">We combine technology, training, and care to deliver exceptional cleaning experiences.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Customers Pick CleanPro</h2>
+            <p className="text-neutral-600 text-lg max-w-2xl mx-auto">We pair trained staff with good products so you get a clean that lasts.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, i) => (
@@ -82,7 +82,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Services</h2>
-            <p className="text-neutral-600 text-lg">Comprehensive cleaning solutions for every need</p>
+            <p className="text-neutral-600 text-lg">Cleaning solutions for homes, offices, and specialised jobs</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {services.map((service, i) => (
@@ -105,13 +105,13 @@ export default function HomePage() {
       <section className="py-20 bg-gradient-to-br from-primary-50 to-accent-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Customers Say</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Customer Reviews</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { name: 'Sarah M.', text: 'Absolutely fantastic service! My home has never looked better.', rating: 5 },
-              { name: 'James L.', text: 'Professional, punctual, and thorough. Highly recommend CleanPro.', rating: 5 },
-              { name: 'Emily R.', text: 'The online booking system makes it so easy. Great experience every time.', rating: 5 },
+              { name: 'Sarah M.', text: 'My apartment looked better than when I moved in. Great team.', rating: 5 },
+              { name: 'James L.', text: 'They showed up on time and did a thorough job. I would use them again.', rating: 5 },
+              { name: 'Emily R.', text: 'Booking online was straightforward. The cleaners were great.', rating: 5 },
             ].map((t, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="card">
                 <div className="flex gap-1 mb-4">{Array(t.rating).fill(0).map((_, j) => <Star key={j} className="w-5 h-5 text-yellow-400 fill-yellow-400" />)}</div>
@@ -126,16 +126,16 @@ export default function HomePage() {
       {/* CTA */}
       <section className="py-20 bg-neutral-900 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready for a Spotless Space?</h2>
-          <p className="text-xl text-neutral-300 mb-8">Join thousands of satisfied customers. First cleaning is on us!</p>
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">Book Your First Clean Today</h2>
+          <p className="text-xl text-neutral-300 mb-8">Get a cleaner at your door this week. Your first booking includes a free quote.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register" className="btn bg-primary-600 hover:bg-primary-700 text-lg px-8 py-3">Start Free Trial</Link>
-            <Link href="/contact" className="btn border-2 border-neutral-600 hover:border-white text-lg px-8 py-3">Contact Sales</Link>
+            <Link href="/register" className="btn bg-primary-600 hover:bg-primary-700 text-lg px-8 py-3">Create Account</Link>
+            <Link href="/contact" className="btn border-2 border-neutral-600 hover:border-white text-lg px-8 py-3">Get in Touch</Link>
           </div>
           <div className="flex flex-wrap gap-6 justify-center mt-8 text-neutral-400">
-            <span className="flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-400" /> No credit card required</span>
-            <span className="flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-400" /> Cancel anytime</span>
-            <span className="flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-400" /> 100% satisfaction guarantee</span>
+            <span className="flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-400" /> No card needed to sign up</span>
+            <span className="flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-400" /> Cancel or reschedule anytime</span>
+            <span className="flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-400" /> Not happy? We will re-clean for free</span>
           </div>
         </div>
       </section>

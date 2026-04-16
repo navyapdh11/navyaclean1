@@ -8,10 +8,10 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 const features = [
-  { icon: Shield, title: 'Consistent Quality', description: 'Our trained cleaners follow a detailed checklist every visit, ensuring the same high standard each time.' },
-  { icon: RefreshCw, title: 'Flexible Scheduling', description: 'Weekly, fortnightly, or monthly visits. You choose the frequency that suits your lifestyle and budget.' },
-  { icon: Clock, title: 'Reliable & Punctual', description: 'Our team arrives on time, every time. 2-4 hours per session depending on your home size and requirements.' },
-  { icon: Star, title: 'Same Cleaner Each Visit', description: 'We assign a dedicated cleaner to your home so they learn your preferences and deliver consistent results.' },
+  { icon: Shield, title: 'Quality You Can Count On', description: 'Trained cleaners follow a checklist every visit.' },
+  { icon: RefreshCw, title: 'Book When It Works', description: 'Weekly, fortnightly, or monthly. You choose.' },
+  { icon: Clock, title: 'On Time, Every Time', description: '2-4 hours per session depending on home size.' },
+  { icon: Star, title: 'Same Cleaner Each Visit', description: 'A dedicated cleaner who learns your home and preferences.' },
 ];
 
 const pricingPlans = [
@@ -28,9 +28,9 @@ const faqs = [
 ];
 
 const testimonials = [
-  { name: 'Amanda K.', location: 'Sydney NSW', text: 'Having the same cleaner every fortnight makes such a difference. Maria knows exactly what I like and the house always feels amazing.', rating: 5 },
-  { name: 'David L.', location: 'Perth WA', text: 'We switched from a casual cleaner to CleanPro and the quality difference is night and day. Very professional and reliable.', rating: 5 },
-  { name: 'Sophie W.', location: 'Adelaide SA', text: 'The online booking system is so convenient. I can reschedule with just a click and the cleaning quality is consistently excellent.', rating: 5 },
+  { name: 'Amanda K.', location: 'Sydney NSW', text: 'Maria comes every fortnight and knows exactly what I like. The house always looks great when I get home.', rating: 5 },
+  { name: 'David L.', location: 'Perth WA', text: 'Switched from a casual cleaner to CleanPro. The quality is much better and they are always on time.', rating: 5 },
+  { name: 'Sophie W.', location: 'Adelaide SA', text: 'I can reschedule online with one click. The cleaning is consistently good.', rating: 5 },
 ];
 
 const galleryItems = [

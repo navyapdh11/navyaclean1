@@ -40,29 +40,29 @@ const SERVICES: Record<string, string> = {
 
 const NEXT_STEPS = [
   {
-    title: 'Booking Confirmed',
-    description: 'Your booking has been successfully created',
+    title: 'Your booking is confirmed',
+    description: 'We have created your booking',
     icon: CheckCircle,
     status: 'completed',
     time: 'Immediately',
   },
   {
     title: 'Cleaner Assigned',
-    description: 'We will assign the best available cleaner for your job',
+    description: 'We will match you with a cleaner',
     icon: User,
     status: 'in-progress',
     time: 'Within 2 hours',
   },
   {
     title: 'Confirmation Call',
-    description: 'Our team will call to confirm details and arrival time',
+    description: 'We will call to confirm the details',
     icon: Phone,
     status: 'pending',
     time: '24 hours before',
   },
   {
     title: 'Cleaning Day',
-    description: 'Your cleaner arrives on time and ready to work',
+    description: 'Your cleaner arrives at the scheduled time',
     icon: Home,
     status: 'pending',
     time: 'Scheduled time',
@@ -105,7 +105,7 @@ function ConfirmationContent() {
     if (!booking) return;
 
     const receiptContent = `
-CLEANPRO ENTERPRISE - RECEIPT
+CLEANPRO RECEIPT
 ================================
 Booking ID: ${bookingId}
 Date: ${new Date().toLocaleDateString('en-AU')}
@@ -121,7 +121,7 @@ TOTAL PAID: $${booking?.totalPrice || 0}
 Payment Status: Paid
 Payment Method: Card (Stripe)
 ================================
-Thank you for choosing CleanPro Enterprise!
+Thanks for booking with CleanPro
     `.trim();
 
     const blob = new Blob([receiptContent], { type: 'text/plain' });
@@ -151,7 +151,7 @@ Thank you for choosing CleanPro Enterprise!
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading booking details...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -165,7 +165,7 @@ Thank you for choosing CleanPro Enterprise!
             <Loader2 className="w-8 h-8 text-red-500" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Not Found</h2>
-          <p className="text-gray-600 mb-6">{error || 'Unable to find booking details'}</p>
+          <p className="text-gray-600 mb-6">{error || 'We could not find the booking'}</p>
           <Link
             href="/book"
             className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 transition-all"
@@ -209,8 +209,8 @@ Thank you for choosing CleanPro Enterprise!
               </svg>
             </motion.div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Booking Confirmed!</h1>
-          <p className="text-gray-600">Your cleaning service has been booked successfully</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Your booking is confirmed</h1>
+          <p className="text-gray-600">Your cleaning is booked</p>
         </motion.div>
 
         {/* Booking ID */}
@@ -385,7 +385,7 @@ Thank you for choosing CleanPro Enterprise!
         {/* Contact Support */}
         <div className="bg-blue-50 rounded-xl p-6 mb-6">
           <h3 className="font-semibold text-blue-900 mb-2">Need Help?</h3>
-          <p className="text-blue-700 mb-4">Our support team is available 7 days a week</p>
+          <p className="text-blue-700 mb-4">Our team is here to help</p>
           <div className="flex flex-col sm:flex-row gap-4">
             <a href="tel:1300CLEAN" className="flex items-center gap-2 text-blue-600 hover:underline">
               <Phone className="w-4 h-4" />
@@ -405,7 +405,7 @@ Thank you for choosing CleanPro Enterprise!
             className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition-all"
           >
             <RotateCcw className="w-5 h-5" />
-            Book Another Clean
+            Book Another Service
           </Link>
         </div>
       </main>

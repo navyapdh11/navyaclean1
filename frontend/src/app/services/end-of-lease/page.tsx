@@ -8,10 +8,10 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 const features = [
-  { icon: Shield, title: 'Bond-Back Guarantee', description: 'We guarantee your bond will be returned. If your landlord or agent is not satisfied, we will re-clean at no extra cost.' },
-  { icon: Sparkles, title: 'Deep Clean Every Surface', description: 'From inside cupboards to behind appliances, we cover every area specified in your exit cleaning checklist.' },
-  { icon: Clock, title: 'Fast Turnaround', description: 'Typical service takes 3-6 hours depending on property size. Same-day and next-day availability.' },
-  { icon: Star, title: 'Trained Professionals', description: 'All technicians are background-checked, fully trained, and experienced in end-of-lease requirements.' },
+  { icon: Shield, title: 'Bond-Back Guarantee', description: 'If your agent is not satisfied, we re-clean at no cost.' },
+  { icon: Sparkles, title: 'Every Surface Covered', description: 'Inside cupboards, behind appliances, and all areas on your exit checklist.' },
+  { icon: Clock, title: 'Fast Turnaround', description: '3-6 hours. Same-day and next-day slots available.' },
+  { icon: Star, title: 'Trained Professionals', description: 'Background-checked cleaners experienced in end-of-lease requirements.' },
 ];
 
 const pricingPlans = [
@@ -28,9 +28,9 @@ const faqs = [
 ];
 
 const testimonials = [
-  { name: 'Jessica T.', location: 'Melbourne VIC', text: 'Got my full bond back! The team was incredibly thorough. They cleaned areas I did not even think about. Highly recommend.', rating: 5 },
-  { name: 'Michael R.', location: 'Sydney NSW', text: 'Used CleanPro for my lease exit. The bond-back guarantee gave me confidence and they delivered perfectly. Professional and fast.', rating: 5 },
-  { name: 'Priya S.', location: 'Brisbane QLD', text: 'Booked last minute and they still managed to come the next day. The apartment looked brand new. Real estate agent was very impressed.', rating: 5 },
+  { name: 'Jessica T.', location: 'Melbourne VIC', text: 'Got my full bond back. They cleaned areas I had not even thought about.', rating: 5 },
+  { name: 'Michael R.', location: 'Sydney NSW', text: 'The bond-back guarantee gave me confidence. They delivered and the agent was happy.', rating: 5 },
+  { name: 'Priya S.', location: 'Brisbane QLD', text: 'Booked last minute and they came the next day. The apartment looked great.', rating: 5 },
 ];
 
 const galleryItems = [
