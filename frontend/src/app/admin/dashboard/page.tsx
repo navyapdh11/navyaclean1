@@ -98,6 +98,74 @@ export default function AdminDashboard() {
 
   const stats = overview?.overview || {};
 
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <Header />
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 z-50 h-full w-64 bg-gray-900 text-white transform transition-transform duration-300 lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-xl font-bold">Admin Panel</h2>
+            <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <nav className="space-y-2">
+            {SIDEBAR_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                  link.href === '/admin/dashboard'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                }`}
+              >
+                <link.icon className="w-5 h-5" />
+                <span>{link.label}</span>
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="lg:ml-64">
+        {/* Top Bar */}
+        <div className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden">
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <button className="relative p-2 hover:bg-gray-100 rounded-lg">
+              <Bell className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center">
+                {(adminBookings?.data || []).filter((b: any) => b.status === 'PENDING').length || 0}
+              </span>
+            </button>
+          </div>
+        </div>
+
         <main className="p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard Overview</h1>
 
@@ -203,7 +271,7 @@ export default function AdminDashboard() {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {serviceDistribution.map((entry, index) => (
+                    {serviceDistribution.map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>

@@ -5,6 +5,7 @@ import { Footer } from '@/components/layout/Footer';
 import { motion } from 'framer-motion';
 import { Sparkles, Shield, Clock, Star, ArrowRight, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { TrustBadges, BondBackGuarantee, GSTDisclosure } from '@/components/compliance/TrustBadges';
 
 const features = [
   { icon: Sparkles, title: 'Quality Cleaning', description: 'Trained staff and eco-friendly products for consistent results.' },
@@ -52,6 +53,9 @@ export default function HomePage() {
               <Link href="/services" className="btn border-2 border-white text-white hover:bg-white/10 text-lg px-8 py-3">
                 View Services
               </Link>
+            </div>
+            <div className="mt-8">
+              <TrustBadges compact />
             </div>
           </motion.div>
         </div>
