@@ -239,6 +239,153 @@ describe('Admin API', () => {
     });
   });
 
+  describe('DELETE /api/v1/admin/users/:id', () => {
+    it('should delete a user', async () => {
+      const testUser = await prisma.user.create({
+        data: {
+          email: 'delete-test@test.com',
+          password: await bcrypt.hash('TestPass123', 12),
+          firstName: 'Delete',
+          lastName: 'Test',
+          role: 'CUSTOMER' as const,
+        },
+      });
+
+      const res = await request(app)
+        .delete(`/api/v1/admin/users/${testUser.id}`)
+        .set('Cookie', `accessToken=${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      const deleted = await prisma.user.findUnique({ where: { id: testUser.id } });
+      expect(deleted).toBeNull();
+    });
+
+    it('should prevent self-deletion', async () => {
+      const res = await request(app)
+        .delete(`/api/v1/admin/users/${adminId}`)
+        .set('Cookie', `accessToken=${adminToken}`);
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('GET /api/v1/admin/users/:id/bookings', () => {
+    it('should return empty bookings for user without customer profile', async () => {
+      const testUser = await prisma.user.create({
+        data: {
+          email: 'no-customer@test.com',
+          password: await bcrypt.hash('TestPass123', 12),
+          firstName: 'No',
+          lastName: 'Customer',
+          role: 'CUSTOMER' as const,
+        },
+      });
+
+      const res = await request(app)
+        .get(`/api/v1/admin/users/${testUser.id}/bookings`)
+        .set('Cookie', `accessToken=${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+    });
+  });
+
+  describe('PUT /api/v1/admin/staff/:id', () => {
+    it('should update staff hourly rate', async () => {
+      // Create staff first
+      const staffUser = await prisma.user.create({
+        data: {
+          email: 'staff-update@test.com',
+          password: await bcrypt.hash('TestPass123', 12),
+          firstName: 'Staff',
+          lastName: 'Update',
+          role: 'STAFF' as const,
+        },
+      });
+      const staff = await prisma.staff.create({
+        data: {
+          userId: staffUser.id,
+          employeeId: 'EMP-TEST1',
+          specialization: 'RESIDENTIAL',
+          hourlyRate: 25,
+        },
+      });
+
+      const res = await request(app)
+        .put(`/api/v1/admin/staff/${staff.id}`)
+        .set('Cookie', `accessToken=${adminToken}`)
+        .send({ hourlyRate: 35 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.hourlyRate).toBe(35);
+    });
+
+    it('should toggle staff active status', async () => {
+      const staffUser = await prisma.user.create({
+        data: {
+          email: 'staff-toggle@test.com',
+          password: await bcrypt.hash('TestPass123', 12),
+          firstName: 'Staff',
+          lastName: 'Toggle',
+          role: 'STAFF' as const,
+        },
+      });
+      const staff = await prisma.staff.create({
+        data: {
+          userId: staffUser.id,
+          employeeId: 'EMP-TEST2',
+          specialization: 'DEEP_CLEAN',
+          hourlyRate: 30,
+          isActive: true,
+        },
+      });
+
+      const res = await request(app)
+        .put(`/api/v1/admin/staff/${staff.id}`)
+        .set('Cookie', `accessToken=${adminToken}`)
+        .send({ isActive: false });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.isActive).toBe(false);
+    });
+  });
+
+  describe('DELETE /api/v1/admin/staff/:id', () => {
+    it('should delete staff and revert user role', async () => {
+      const staffUser = await prisma.user.create({
+        data: {
+          email: 'staff-delete@test.com',
+          password: await bcrypt.hash('TestPass123', 12),
+          firstName: 'Staff',
+          lastName: 'Delete',
+          role: 'STAFF' as const,
+        },
+      });
+      const staff = await prisma.staff.create({
+        data: {
+          userId: staffUser.id,
+          employeeId: 'EMP-TEST3',
+          specialization: 'OFFICE',
+          hourlyRate: 28,
+        },
+      });
+
+      const res = await request(app)
+        .delete(`/api/v1/admin/staff/${staff.id}`)
+        .set('Cookie', `accessToken=${adminToken}`);
+
+      expect(res.status).toBe(200);
+
+      const deletedStaff = await prisma.staff.findUnique({ where: { id: staff.id } });
+      expect(deletedStaff).toBeNull();
+
+      const revertedUser = await prisma.user.findUnique({ where: { id: staffUser.id } });
+      expect(revertedUser?.role).toBe('CUSTOMER');
+    });
+  });
+
   describe('GET /api/v1/dashboard', () => {
     it('should get dashboard overview', async () => {
       const res = await request(app)

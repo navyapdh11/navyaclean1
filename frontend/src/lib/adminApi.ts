@@ -37,10 +37,31 @@ export function useAdminUsers(page = 1, limit = 20, role?: string) {
   });
 }
 
+export function useUserBookings(userId: string, page = 1, limit = 20) {
+  return useQuery({
+    queryKey: ['admin-user-bookings', userId, page, limit],
+    queryFn: async () => {
+      const { data } = await adminApi.getUserBookings(userId, { page, limit });
+      return data;
+    },
+    enabled: !!userId,
+  });
+}
+
 export function useUpdateUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => adminApi.updateUser(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+  });
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => adminApi.deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     },
@@ -79,6 +100,26 @@ export function useCreateStaff() {
   });
 }
 
+export function useUpdateStaff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => adminApi.updateStaff(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-staff'] });
+    },
+  });
+}
+
+export function useDeleteStaff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => adminApi.deleteStaff(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-staff'] });
+    },
+  });
+}
+
 // ==================== Bookings ====================
 
 export function useAdminBookings(page = 1, limit = 20, status?: string) {
@@ -91,11 +132,63 @@ export function useAdminBookings(page = 1, limit = 20, status?: string) {
   });
 }
 
+export function useAdminBookingOne(id: string) {
+  return useQuery({
+    queryKey: ['admin-booking', id],
+    queryFn: async () => {
+      const { data } = await bookingsApi.adminGetOne(id);
+      return data.data;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useAssignStaff() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, staffId }: { id: string; staffId: string }) =>
       bookingsApi.assignStaff(id, { staffId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+    },
+  });
+}
+
+export function useAdminUpdateBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      bookingsApi.adminUpdate(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+    },
+  });
+}
+
+export function useAdminDeleteBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => bookingsApi.adminDelete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+    },
+  });
+}
+
+export function useBulkConfirmBookings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (bookingIds: string[]) => bookingsApi.bulkConfirm(bookingIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+    },
+  });
+}
+
+export function useBulkCancelBookings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (bookingIds: string[]) => bookingsApi.bulkCancel(bookingIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
     },

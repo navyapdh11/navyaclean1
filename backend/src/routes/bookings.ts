@@ -75,6 +75,126 @@ router.put('/admin/:id/assign', authenticate, authorize('ADMIN', 'MANAGER'),
   }
 );
 
+// Admin edit booking
+router.put('/admin/:id', authenticate, authorize('ADMIN', 'MANAGER'),
+  [
+    body('date').optional().isISO8601(),
+    body('address').optional().trim().isLength({ min: 5 }),
+    body('notes').optional(),
+    body('totalPrice').optional().isFloat({ min: 0 }),
+    body('status').optional().isIn(['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW']),
+  ],
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) throw new AppError(400, 'Validation failed');
+
+      const bookingId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const { date, address, notes, totalPrice, status } = req.body;
+      const data: Record<string, any> = {};
+
+      if (date) {
+        const newDate = new Date(date);
+        data.date = newDate;
+        data.startTime = newDate;
+        // Recalculate endTime based on service duration
+        const booking = await prisma.booking.findUnique({ where: { id: bookingId }, include: { service: true } });
+        if (booking) {
+          data.endTime = calculateEndTime(newDate, booking.service.duration);
+        }
+      }
+      if (address !== undefined) data.address = address;
+      if (notes !== undefined) data.notes = notes;
+      if (totalPrice !== undefined) data.totalPrice = totalPrice;
+      if (status !== undefined) data.status = status;
+
+      const updated = await prisma.booking.update({
+        where: { id: bookingId },
+        data,
+        include: { service: true, staff: { include: { user: true } }, customer: { include: { user: true } } },
+      });
+      return successResponse(res, updated, 'Booking updated');
+    } catch (error) { next(error); }
+  }
+);
+
+// Admin delete booking
+router.delete('/admin/:id', authenticate, authorize('ADMIN', 'MANAGER'), async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const bookingId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+    if (!booking) throw new AppError(404, 'Booking not found');
+    if (booking.status === 'COMPLETED') {
+      throw new AppError(400, 'Cannot delete completed bookings');
+    }
+
+    await prisma.booking.delete({ where: { id: bookingId } });
+    return successResponse(res, null, 'Booking deleted');
+  } catch (error) { next(error); }
+});
+
+// Admin bulk confirm bookings
+router.post('/admin/bulk-confirm', authenticate, authorize('ADMIN', 'MANAGER'),
+  [body('bookingIds').isArray()],
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) throw new AppError(400, 'Validation failed');
+
+      const { bookingIds } = req.body;
+      if (!bookingIds.length) throw new AppError(400, 'No booking IDs provided');
+
+      const result = await prisma.booking.updateMany({
+        where: { id: { in: bookingIds }, status: 'PENDING' },
+        data: { status: 'CONFIRMED' },
+      });
+      return successResponse(res, { confirmed: result.count }, `${result.count} booking(s) confirmed`);
+    } catch (error) { next(error); }
+  }
+);
+
+// Admin bulk cancel bookings
+router.post('/admin/bulk-cancel', authenticate, authorize('ADMIN', 'MANAGER'),
+  [body('bookingIds').isArray()],
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) throw new AppError(400, 'Validation failed');
+
+      const { bookingIds } = req.body;
+      if (!bookingIds.length) throw new AppError(400, 'No booking IDs provided');
+
+      const result = await prisma.booking.updateMany({
+        where: {
+          id: { in: bookingIds },
+          status: { in: ['PENDING', 'CONFIRMED'] },
+        },
+        data: { status: 'CANCELLED' },
+      });
+      return successResponse(res, { cancelled: result.count }, `${result.count} booking(s) cancelled`);
+    } catch (error) { next(error); }
+  }
+);
+
+// Admin get single booking details
+router.get('/admin/:id', authenticate, authorize('ADMIN', 'MANAGER'), async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const bookingId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        service: true,
+        staff: { include: { user: true } },
+        customer: { include: { user: true } },
+        payment: true,
+        reviews: true,
+      },
+    });
+    if (!booking) throw new AppError(404, 'Booking not found');
+    return successResponse(res, booking);
+  } catch (error) { next(error); }
+});
+
 // ===== PARAMETERIZED ROUTES =====
 
 router.get('/', authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {

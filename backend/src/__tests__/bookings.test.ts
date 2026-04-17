@@ -228,3 +228,235 @@ describe('Bookings API', () => {
     });
   });
 });
+
+// ===== ADMIN BOOKING TESTS =====
+
+describe('Admin Bookings API', () => {
+  const adminUser = {
+    email: 'admin-booking@test.com',
+    password: 'AdminPass123!',
+    firstName: 'Admin',
+    lastName: 'Booking',
+    role: 'ADMIN' as const,
+  };
+
+  let adminToken: string;
+  let bookingId: string;
+  let serviceId: string;
+
+  beforeAll(async () => {
+    // Create admin
+    await prisma.user.create({
+      data: {
+        email: adminUser.email,
+        password: await bcrypt.hash(adminUser.password, 12),
+        firstName: adminUser.firstName,
+        lastName: adminUser.lastName,
+        role: adminUser.role,
+      },
+    });
+
+    // Login
+    const loginRes = await request(app).post('/api/v1/auth/login').send({
+      email: adminUser.email,
+      password: adminUser.password,
+    });
+    const cookies = (loginRes.headers['set-cookie'] as unknown as string[]) | undefined;
+    adminToken = cookies?.find((c: string) => c.includes('accessToken'))?.split(';')[0].split('=')[1] || '';
+
+    // Create service
+    const service = await prisma.service.create({
+      data: {
+        name: 'Admin Test Cleaning',
+        slug: 'admin-test-cleaning',
+        description: 'Test',
+        basePrice: 200,
+        duration: 180,
+        isActive: true,
+        type: 'DEEP_CLEAN',
+      },
+    });
+    serviceId = service.id;
+
+    // Create customer + booking
+    const customerUser = await prisma.user.create({
+      data: {
+        email: 'admin-booking-customer@test.com',
+        password: await bcrypt.hash('TestPass123', 12),
+        firstName: 'Customer',
+        lastName: 'AdminTest',
+        role: 'CUSTOMER',
+      },
+    });
+    const customer = await prisma.customer.create({
+      data: {
+        userId: customerUser.id,
+        address: '456 Admin St',
+        city: 'Melbourne',
+        state: 'VIC',
+        zipCode: '3000',
+      },
+    });
+
+    const futureDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+    const booking = await prisma.booking.create({
+      data: {
+        customerId: customer.id,
+        serviceId,
+        date: futureDate,
+        startTime: futureDate,
+        endTime: new Date(futureDate.getTime() + 3 * 60 * 60 * 1000),
+        address: '456 Admin St, Melbourne VIC 3000',
+        totalPrice: 200,
+        status: 'PENDING',
+        notes: 'Admin test booking',
+      },
+    });
+    bookingId = booking.id;
+  });
+
+  afterAll(async () => {
+    await prisma.booking.deleteMany().catch(() => {});
+    await prisma.customer.deleteMany().catch(() => {});
+    await prisma.staff.deleteMany().catch(() => {});
+    await prisma.user.deleteMany().catch(() => {});
+    await prisma.service.deleteMany().catch(() => {});
+    await prisma.$disconnect();
+  });
+
+  describe('GET /api/v1/bookings/admin/:id', () => {
+    it('should get booking details as admin', async () => {
+      const res = await request(app)
+        .get(`/api/v1/bookings/admin/${bookingId}`)
+        .set('Cookie', `accessToken=${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveProperty('id', bookingId);
+      expect(res.body.data).toHaveProperty('customer');
+      expect(res.body.data).toHaveProperty('service');
+    });
+
+    it('should return 404 for non-existent booking', async () => {
+      const res = await request(app)
+        .get('/api/v1/bookings/admin/00000000-0000-0000-0000-000000000000')
+        .set('Cookie', `accessToken=${adminToken}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('PUT /api/v1/bookings/admin/:id', () => {
+    it('should update booking status as admin', async () => {
+      const res = await request(app)
+        .put(`/api/v1/bookings/admin/${bookingId}`)
+        .set('Cookie', `accessToken=${adminToken}`)
+        .send({ status: 'CONFIRMED' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.status).toBe('CONFIRMED');
+    });
+
+    it('should update booking address', async () => {
+      const res = await request(app)
+        .put(`/api/v1/bookings/admin/${bookingId}`)
+        .set('Cookie', `accessToken=${adminToken}`)
+        .send({ address: '789 Updated Ave, Melbourne VIC 3000' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.address).toBe('789 Updated Ave, Melbourne VIC 3000');
+    });
+  });
+
+  describe('DELETE /api/v1/bookings/admin/:id', () => {
+    it('should delete a pending booking', async () => {
+      const futureDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+      const customer = await prisma.customer.findFirst();
+      const deleteBooking = await prisma.booking.create({
+        data: {
+          customerId: customer!.id,
+          serviceId,
+          date: futureDate,
+          startTime: futureDate,
+          endTime: new Date(futureDate.getTime() + 2 * 60 * 60 * 1000),
+          address: 'Delete Test St',
+          totalPrice: 100,
+          status: 'PENDING',
+        },
+      });
+
+      const res = await request(app)
+        .delete(`/api/v1/bookings/admin/${deleteBooking.id}`)
+        .set('Cookie', `accessToken=${adminToken}`);
+
+      expect(res.status).toBe(200);
+
+      const deleted = await prisma.booking.findUnique({ where: { id: deleteBooking.id } });
+      expect(deleted).toBeNull();
+    });
+
+    it('should not delete a completed booking', async () => {
+      const futureDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+      const customer = await prisma.customer.findFirst();
+      const completedBooking = await prisma.booking.create({
+        data: {
+          customerId: customer!.id,
+          serviceId,
+          date: futureDate,
+          startTime: futureDate,
+          endTime: new Date(futureDate.getTime() + 2 * 60 * 60 * 1000),
+          address: 'Completed Test St',
+          totalPrice: 100,
+          status: 'COMPLETED',
+        },
+      });
+
+      const res = await request(app)
+        .delete(`/api/v1/bookings/admin/${completedBooking.id}`)
+        .set('Cookie', `accessToken=${adminToken}`);
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('POST /api/v1/bookings/admin/bulk-confirm', () => {
+    it('should bulk confirm pending bookings', async () => {
+      const customer = await prisma.customer.findFirst();
+      const date = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000);
+      const b1 = await prisma.booking.create({
+        data: { customerId: customer!.id, serviceId, date, startTime: date, endTime: new Date(date.getTime() + 60 * 60 * 1000), address: 'Bulk1 St', totalPrice: 50, status: 'PENDING' },
+      });
+      const b2 = await prisma.booking.create({
+        data: { customerId: customer!.id, serviceId, date, startTime: date, endTime: new Date(date.getTime() + 60 * 60 * 1000), address: 'Bulk2 St', totalPrice: 50, status: 'PENDING' },
+      });
+
+      const res = await request(app)
+        .post('/api/v1/bookings/admin/bulk-confirm')
+        .set('Cookie', `accessToken=${adminToken}`)
+        .send({ bookingIds: [b1.id, b2.id] });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.confirmed).toBe(2);
+    });
+  });
+
+  describe('POST /api/v1/bookings/admin/bulk-cancel', () => {
+    it('should bulk cancel pending bookings', async () => {
+      const customer = await prisma.customer.findFirst();
+      const date = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000);
+      const b1 = await prisma.booking.create({
+        data: { customerId: customer!.id, serviceId, date, startTime: date, endTime: new Date(date.getTime() + 60 * 60 * 1000), address: 'Cancel1 St', totalPrice: 50, status: 'PENDING' },
+      });
+      const b2 = await prisma.booking.create({
+        data: { customerId: customer!.id, serviceId, date, startTime: date, endTime: new Date(date.getTime() + 60 * 60 * 1000), address: 'Cancel2 St', totalPrice: 50, status: 'CONFIRMED' },
+      });
+
+      const res = await request(app)
+        .post('/api/v1/bookings/admin/bulk-cancel')
+        .set('Cookie', `accessToken=${adminToken}`)
+        .send({ bookingIds: [b1.id, b2.id] });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.cancelled).toBe(2);
+    });
+  });
+});

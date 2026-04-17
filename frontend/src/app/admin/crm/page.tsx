@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { useAdminUsers } from '@/lib/adminApi';
+import { useAdminUsers, useUpdateUser, useDeleteUser, useCreateUser, useUserBookings } from '@/lib/adminApi';
 
 const SIDEBAR_LINKS = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
@@ -51,11 +51,21 @@ export default function AdminCRM() {
   const [sortBy, setSortBy] = useState<string>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
+  const [selectedCustomerFullId, setSelectedCustomerFullId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [addForm, setAddForm] = useState({ email: '', password: '', firstName: '', lastName: '', phone: '' });
+  const [editForm, setEditForm] = useState<{ id: string; role: string; isActive: boolean }>({ id: '', role: 'CUSTOMER', isActive: true });
 
   const [page] = useState(1);
   const limit = 50;
   const { data: usersData, isLoading } = useAdminUsers(page, limit, 'CUSTOMER');
+  const updateUserMutation = useUpdateUser();
+  const deleteUserMutation = useDeleteUser();
+  const createUserMutation = useCreateUser();
+  const { data: userBookingsData } = useUserBookings(selectedCustomerFullId || '', 1, 50);
 
   const customers = useMemo(() => {
     return (usersData?.data || []).map((u: any) => ({
@@ -99,12 +109,67 @@ export default function AdminCRM() {
   };
 
   const handleViewDetails = (customerId: string) => {
-    setSelectedCustomer(customerId);
-    setShowDetails(true);
+    const user = (usersData?.data || []).find((u: any) => u.id.substring(0, 8).toUpperCase() === customerId);
+    if (user) {
+      setSelectedCustomer(customerId);
+      setSelectedCustomerFullId(user.id);
+      setShowDetails(true);
+    }
   };
 
   const selectedCustomerData = customers.find((c: any) => c.id === selectedCustomer);
-  const customerBookings: any[] = []; // Will be populated when booking history API is available
+  const customerBookings: any[] = (userBookingsData?.data || []).map((b: any) => ({
+    service: b.service?.name || 'Unknown',
+    date: new Date(b.date).toLocaleDateString(),
+    amount: Number(b.totalPrice || 0),
+    status: (b.status || '').toLowerCase(),
+  }));
+
+  const handleAddCustomer = () => {
+    if (!addForm.email || !addForm.password || !addForm.firstName || !addForm.lastName) return;
+    createUserMutation.mutate({
+      ...addForm,
+      role: 'CUSTOMER',
+    }, {
+      onSuccess: () => {
+        setShowAddModal(false);
+        setAddForm({ email: '', password: '', firstName: '', lastName: '', phone: '' });
+      },
+    });
+  };
+
+  const handleEditCustomer = () => {
+    updateUserMutation.mutate({ id: editForm.id, data: { role: editForm.role, isActive: editForm.isActive } }, {
+      onSuccess: () => setShowEditModal(false),
+    });
+  };
+
+  const handleDeleteCustomer = () => {
+    if (editForm.id) {
+      deleteUserMutation.mutate(editForm.id, {
+        onSuccess: () => {
+          setShowDeleteConfirm(false);
+          setShowDetails(false);
+        },
+      });
+    }
+  };
+
+  const handleExport = () => {
+    const csv = [
+      ['ID', 'Name', 'Email', 'Phone', 'Join Date', 'Bookings', 'Revenue'].join(','),
+      ...filteredCustomers.map((c: any) =>
+        [c.id, c.name, c.email, c.phone, c.joinDate, c.totalBookings, c.totalSpent].join(',')
+      ),
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'customers-export.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (isLoading) {
     return (
@@ -231,11 +296,17 @@ export default function AdminCRM() {
                   className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+              >
                 <UserPlus className="w-4 h-4" />
                 Add Customer
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-all">
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-all"
+              >
                 <Download className="w-4 h-4" />
                 Export
               </button>
@@ -319,10 +390,30 @@ export default function AdminCRM() {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="p-1 hover:bg-gray-100 rounded" title="Edit">
+                          <button
+                            onClick={() => {
+                              const user = (usersData?.data || []).find((u: any) => u.id.substring(0, 8).toUpperCase() === customer.id);
+                              if (user) {
+                                setEditForm({ id: user.id, role: user.role, isActive: user.isActive });
+                                setShowEditModal(true);
+                              }
+                            }}
+                            className="p-1 hover:bg-gray-100 rounded"
+                            title="Edit"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="p-1 hover:bg-red-100 rounded text-red-500" title="Delete">
+                          <button
+                            onClick={() => {
+                              const user = (usersData?.data || []).find((u: any) => u.id.substring(0, 8).toUpperCase() === customer.id);
+                              if (user) {
+                                setEditForm({ id: user.id, role: user.role, isActive: user.isActive });
+                                setShowDeleteConfirm(true);
+                              }
+                            }}
+                            className="p-1 hover:bg-red-100 rounded text-red-500"
+                            title="Delete"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -403,7 +494,7 @@ export default function AdminCRM() {
               )}
 
               {/* Booking History */}
-              <h5 className="font-semibold mb-3">Booking History</h5>
+              <h5 className="font-semibold mb-3">Booking History ({customerBookings.length})</h5>
               {customerBookings.length > 0 ? (
                 <div className="space-y-2">
                   {customerBookings.map((booking, index) => (
@@ -428,17 +519,137 @@ export default function AdminCRM() {
 
             <div className="p-6 border-t flex gap-3 justify-end sticky bottom-0 bg-white">
               <button
-                onClick={() => setShowDetails(false)}
+                onClick={() => { setShowDetails(false); setSelectedCustomerFullId(null); }}
                 className="px-4 py-2 border rounded-lg hover:bg-gray-50"
               >
                 Close
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              <button
+                onClick={() => {
+                  const user = (usersData?.data || []).find((u: any) => u.id === selectedCustomerFullId);
+                  if (user) {
+                    setEditForm({ id: user.id, role: user.role, isActive: user.isActive });
+                    setShowEditModal(true);
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
                 Edit Customer
+              </button>
+              <button
+                onClick={() => {
+                  const user = (usersData?.data || []).find((u: any) => u.id === selectedCustomerFullId);
+                  if (user) {
+                    setEditForm({ id: user.id, role: user.role, isActive: user.isActive });
+                    setShowDeleteConfirm(true);
+                  }
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Delete
               </button>
               <Link href="/admin/bookings" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                 New Booking
               </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Customer Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-lg font-bold">Add New Customer</h3>
+              <button onClick={() => setShowAddModal(false)}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                  <input type="text" value={addForm.firstName} onChange={(e) => setAddForm({ ...addForm, firstName: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <input type="text" value={addForm.lastName} onChange={(e) => setAddForm({ ...addForm, lastName: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" value={addForm.email} onChange={(e) => setAddForm({ ...addForm, email: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" value={addForm.password} onChange={(e) => setAddForm({ ...addForm, password: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input type="tel" value={addForm.phone} onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+            <div className="p-6 border-t flex gap-3 justify-end">
+              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={handleAddCustomer} disabled={createUserMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                {createUserMutation.isPending ? 'Creating...' : 'Add Customer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Customer Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-lg font-bold">Edit Customer</h3>
+              <button onClick={() => setShowEditModal(false)}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="CUSTOMER">Customer</option>
+                  <option value="STAFF">Staff</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" checked={editForm.isActive} onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })} id="isActive" className="rounded" />
+                <label htmlFor="isActive" className="text-sm font-medium text-gray-700">Active Account</label>
+              </div>
+            </div>
+            <div className="p-6 border-t flex gap-3 justify-end">
+              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={handleEditCustomer} disabled={updateUserMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="p-6 border-b">
+              <h3 className="text-lg font-bold text-red-600">Delete Customer</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600">Are you sure you want to delete this customer? This action cannot be undone and will remove all associated data.</p>
+            </div>
+            <div className="p-6 border-t flex gap-3 justify-end">
+              <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={handleDeleteCustomer} disabled={deleteUserMutation.isPending} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+                {deleteUserMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
             </div>
           </div>
         </div>

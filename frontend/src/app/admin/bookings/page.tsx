@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { useAdminBookings, useAdminStaff, useAssignStaff } from '@/lib/adminApi';
+import { useAdminBookings, useAdminStaff, useAssignStaff, useAdminDeleteBooking, useBulkConfirmBookings, useBulkCancelBookings, useAdminBookingOne } from '@/lib/adminApi';
 
 const SIDEBAR_LINKS = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
@@ -54,12 +54,21 @@ export default function AdminBookings() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [bookingToAssign, setBookingToAssign] = useState<string | null>(null);
   const [selectedCleaner, setSelectedCleaner] = useState('');
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [bookingActionId, setBookingActionId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Record<string, any>>({});
 
   const [page, setPage] = useState(1);
   const limit = 20;
   const { data: bookingsData, isLoading } = useAdminBookings(page, limit, statusFilter === 'all' ? undefined : statusFilter);
   const { data: staff } = useAdminStaff();
   const assignMutation = useAssignStaff();
+  const deleteBookingMutation = useAdminDeleteBooking();
+  const bulkConfirmMutation = useBulkConfirmBookings();
+  const bulkCancelMutation = useBulkCancelBookings();
+  const { data: selectedBookingDetails, isLoading: isLoadingDetails } = useAdminBookingOne(bookingActionId || '');
 
   const bookings = useMemo(() => {
     return (bookingsData?.data || []).map((b: any) => ({
@@ -139,8 +148,88 @@ export default function AdminBookings() {
   };
 
   const handleBulkAction = (action: string) => {
-    console.log(`Bulk ${action} on ${selectedBookings.length} bookings`);
-    setSelectedBookings([]);
+    // Map short IDs to full API IDs
+    const fullIds = selectedBookings
+      .map((shortId) => {
+        const booking = (bookingsData?.data || []).find(
+          (b: any) => b.id.substring(0, 8).toUpperCase() === shortId
+        );
+        return booking?.id;
+      })
+      .filter(Boolean) as string[];
+
+    if (action === 'confirm') {
+      bulkConfirmMutation.mutate(fullIds, {
+        onSettled: () => setSelectedBookings([]),
+      });
+    } else if (action === 'cancel') {
+      bulkCancelMutation.mutate(fullIds, {
+        onSettled: () => setSelectedBookings([]),
+      });
+    }
+  };
+
+  const handleViewBooking = (shortId: string) => {
+    const booking = (bookingsData?.data || []).find(
+      (b: any) => b.id.substring(0, 8).toUpperCase() === shortId
+    );
+    if (booking) {
+      setBookingActionId(booking.id);
+      setShowViewModal(true);
+    }
+  };
+
+  const handleEditBooking = (shortId: string) => {
+    const booking = (bookingsData?.data || []).find(
+      (b: any) => b.id.substring(0, 8).toUpperCase() === shortId
+    );
+    if (booking) {
+      setBookingActionId(booking.id);
+      setEditForm({
+        address: booking.address,
+        notes: booking.notes || '',
+        totalPrice: booking.totalPrice,
+        status: booking.status,
+        date: new Date(booking.date).toISOString().slice(0, 16),
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (!bookingActionId) return;
+    // We'll use the adminUpdateBooking mutation — need to add it to the hook
+    import('@/lib/api').then(({ bookingsApi }) => {
+      bookingsApi.adminUpdate(bookingActionId, editForm)
+        .then(() => {
+          setShowEditModal(false);
+          setBookingActionId(null);
+          // Invalidate the query
+          window.location.reload();
+        })
+        .catch(() => {});
+    });
+  };
+
+  const handleDeleteBooking = (shortId: string) => {
+    const booking = (bookingsData?.data || []).find(
+      (b: any) => b.id.substring(0, 8).toUpperCase() === shortId
+    );
+    if (booking) {
+      setBookingActionId(booking.id);
+      setShowDeleteConfirm(true);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (bookingActionId) {
+      deleteBookingMutation.mutate(bookingActionId, {
+        onSettled: () => {
+          setShowDeleteConfirm(false);
+          setBookingActionId(null);
+        },
+      });
+    }
   };
 
   const handleExport = () => {
@@ -397,13 +486,25 @@ export default function AdminBookings() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-1">
-                          <button className="p-1 hover:bg-gray-100 rounded" title="View">
+                          <button
+                            onClick={() => handleViewBooking(booking.id)}
+                            className="p-1 hover:bg-gray-100 rounded"
+                            title="View"
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="p-1 hover:bg-gray-100 rounded" title="Edit">
+                          <button
+                            onClick={() => handleEditBooking(booking.id)}
+                            className="p-1 hover:bg-gray-100 rounded"
+                            title="Edit"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="p-1 hover:bg-red-100 rounded text-red-500" title="Delete">
+                          <button
+                            onClick={() => handleDeleteBooking(booking.id)}
+                            className="p-1 hover:bg-red-100 rounded text-red-500"
+                            title="Delete"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -454,6 +555,130 @@ export default function AdminBookings() {
               >
                 Assign
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Booking Modal */}
+      {showViewModal && selectedBookingDetails && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-lg font-bold">Booking Details</h3>
+              <button onClick={() => { setShowViewModal(false); setBookingActionId(null); }}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-sm text-gray-500">Booking ID</p><p className="font-medium">{selectedBookingDetails.id.substring(0, 8).toUpperCase()}</p></div>
+                <div><p className="text-sm text-gray-500">Status</p><span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[selectedBookingDetails.status]}`}>{selectedBookingDetails.status}</span></div>
+                <div><p className="text-sm text-gray-500">Customer</p><p className="font-medium">{selectedBookingDetails.customer?.user?.firstName} {selectedBookingDetails.customer?.user?.lastName}</p></div>
+                <div><p className="text-sm text-gray-500">Service</p><p className="font-medium">{selectedBookingDetails.service?.name}</p></div>
+                <div><p className="text-sm text-gray-500">Date</p><p className="font-medium">{new Date(selectedBookingDetails.date).toLocaleDateString()}</p></div>
+                <div><p className="text-sm text-gray-500">Time</p><p className="font-medium">{new Date(selectedBookingDetails.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></div>
+                <div><p className="text-sm text-gray-500">Address</p><p className="font-medium">{selectedBookingDetails.address}</p></div>
+                <div><p className="text-sm text-gray-500">Total Price</p><p className="font-medium">${selectedBookingDetails.totalPrice}</p></div>
+                <div><p className="text-sm text-gray-500">Cleaner</p><p className="font-medium">{selectedBookingDetails.staff ? `${selectedBookingDetails.staff.user?.firstName} ${selectedBookingDetails.staff.user?.lastName}` : 'Not assigned'}</p></div>
+                <div><p className="text-sm text-gray-500">Created</p><p className="font-medium">{new Date(selectedBookingDetails.createdAt).toLocaleDateString()}</p></div>
+              </div>
+              {selectedBookingDetails.notes && (
+                <div><p className="text-sm text-gray-500">Notes</p><p className="text-sm">{selectedBookingDetails.notes}</p></div>
+              )}
+            </div>
+            <div className="p-6 border-t flex justify-end">
+              <button onClick={() => { setShowViewModal(false); setBookingActionId(null); }} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Booking Modal */}
+      {showEditModal && bookingActionId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-lg font-bold">Edit Booking</h3>
+              <button onClick={() => { setShowEditModal(false); setBookingActionId(null); }}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
+                <input
+                  type="datetime-local"
+                  value={editForm.date || ''}
+                  onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <input
+                  type="text"
+                  value={editForm.address || ''}
+                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  value={editForm.notes || ''}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Price ($)</label>
+                  <input
+                    type="number"
+                    value={editForm.totalPrice || ''}
+                    onChange={(e) => setEditForm({ ...editForm, totalPrice: parseFloat(e.target.value) })}
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={editForm.status || ''}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="PENDING">Pending</option>
+                    <option value="CONFIRMED">Confirmed</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t flex gap-3 justify-end">
+              <button onClick={() => { setShowEditModal(false); setBookingActionId(null); }} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={handleSaveEdit} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="p-6 border-b">
+              <h3 className="text-lg font-bold text-red-600">Delete Booking</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600">Are you sure you want to delete this booking? This action cannot be undone.</p>
+            </div>
+            <div className="p-6 border-t flex gap-3 justify-end">
+              <button onClick={() => { setShowDeleteConfirm(false); setBookingActionId(null); }} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
             </div>
           </div>
         </div>

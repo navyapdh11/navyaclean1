@@ -13,8 +13,6 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -28,8 +26,6 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      accessToken: null,
-      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
       login: async (email: string, password: string) => {
@@ -57,7 +53,7 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try { await authApi.logout(); } catch {}
         // Backend clears HTTP-only cookies automatically on logout
-        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+        set({ user: null, isAuthenticated: false });
       },
       setUser: (user: User) => set({ user }),
       fetchProfile: async () => {

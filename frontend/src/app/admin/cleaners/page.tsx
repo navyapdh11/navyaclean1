@@ -42,7 +42,7 @@ import {
 } from 'recharts';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { useAdminStaff, useCreateStaff } from '@/lib/adminApi';
+import { useAdminStaff, useCreateStaff, useUpdateStaff, useDeleteStaff } from '@/lib/adminApi';
 
 const SIDEBAR_LINKS = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
@@ -66,9 +66,16 @@ export default function AdminCleaners() {
   const [selectedCleaner, setSelectedCleaner] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [addForm, setAddForm] = useState({ name: '', email: '', phone: '', suburb: '', hourlyRate: '', password: '' });
+  const [editStaffId, setEditStaffId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ hourlyRate: number; isActive: boolean }>({ hourlyRate: 0, isActive: true });
 
   const { data: staffData, isLoading } = useAdminStaff();
   const createStaffMutation = useCreateStaff();
+  const updateStaffMutation = useUpdateStaff();
+  const deleteStaffMutation = useDeleteStaff();
 
   const cleaners = useMemo(() => {
     return (staffData || []).map((s: any) => ({
@@ -133,6 +140,87 @@ export default function AdminCleaners() {
   const handleViewDetails = (cleanerId: string) => {
     setSelectedCleaner(cleanerId);
     setShowDetails(true);
+  };
+
+  const handleAddCleaner = () => {
+    if (!addForm.email || !addForm.password || !addForm.name || !addForm.hourlyRate) return;
+    // We need to create a user first, then a staff profile
+    // For simplicity, call the createStaff endpoint with minimal data
+    // This requires a user to exist — in production you'd create user + staff in one flow
+    import('@/lib/api').then(({ api }) => {
+      const [firstName, ...lastParts] = addForm.name.split(' ');
+      api.post('/admin/users', {
+        email: addForm.email,
+        password: addForm.password,
+        firstName: firstName,
+        lastName: lastParts.join(' ') || 'Staff',
+        role: 'STAFF',
+        phone: addForm.phone,
+      }).then((userRes) => {
+        const userId = userRes.data.data.id;
+        createStaffMutation.mutate({
+          userId,
+          specialization: 'RESIDENTIAL',
+          hourlyRate: parseFloat(addForm.hourlyRate),
+        }, {
+          onSuccess: () => {
+            setShowAddModal(false);
+            setAddForm({ name: '', email: '', phone: '', suburb: '', hourlyRate: '', password: '' });
+          },
+        });
+      });
+    });
+  };
+
+  const handleEditCleaner = (shortId: string) => {
+    const staff = (staffData || []).find((s: any) => s.id.substring(0, 8).toUpperCase() === shortId);
+    if (staff) {
+      setEditStaffId(staff.id);
+      setEditForm({ hourlyRate: Number(staff.hourlyRate || 0), isActive: staff.isActive });
+      setShowEditModal(true);
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (!editStaffId) return;
+    updateStaffMutation.mutate({ id: editStaffId, data: editForm }, {
+      onSuccess: () => setShowEditModal(false),
+    });
+  };
+
+  const handleDeleteCleaner = (shortId: string) => {
+    const staff = (staffData || []).find((s: any) => s.id.substring(0, 8).toUpperCase() === shortId);
+    if (staff) {
+      setEditStaffId(staff.id);
+      setShowDeleteConfirm(true);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (editStaffId) {
+      deleteStaffMutation.mutate(editStaffId, {
+        onSuccess: () => {
+          setShowDeleteConfirm(false);
+          setEditStaffId(null);
+        },
+      });
+    }
+  };
+
+  const handleExport = () => {
+    const csv = [
+      ['ID', 'Name', 'Email', 'Phone', 'Specialization', 'Hourly Rate', 'Rating', 'Jobs', 'Status'].join(','),
+      ...filteredCleaners.map((c: any) =>
+        [c.id, c.name, c.email, c.phone, c.specialties.join(';'), c.hourlyRate, c.rating, c.totalJobs, c.status].join(',')
+      ),
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cleaners-export.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const selectedCleanerData = cleaners.find((c: any) => c.id === selectedCleaner);
@@ -308,7 +396,10 @@ export default function AdminCleaners() {
                   <UserPlus className="w-4 h-4" />
                   Add Cleaner
                 </button>
-                <button className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-all">
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-all"
+                >
                   <Download className="w-4 h-4" />
                   Export
                 </button>
@@ -422,10 +513,18 @@ export default function AdminCleaners() {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="p-1 hover:bg-gray-100 rounded" title="Edit">
+                          <button
+                            onClick={() => handleEditCleaner(cleaner.id)}
+                            className="p-1 hover:bg-gray-100 rounded"
+                            title="Edit"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="p-1 hover:bg-red-100 rounded text-red-500" title="Remove">
+                          <button
+                            onClick={() => handleDeleteCleaner(cleaner.id)}
+                            className="p-1 hover:bg-red-100 rounded text-red-500"
+                            title="Remove"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -590,8 +689,30 @@ export default function AdminCleaners() {
               >
                 Close
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              <button
+                onClick={() => {
+                  const staff = (staffData || []).find((s: any) => s.id.substring(0, 8).toUpperCase() === selectedCleaner);
+                  if (staff) {
+                    setEditStaffId(staff.id);
+                    setEditForm({ hourlyRate: Number(staff.hourlyRate || 0), isActive: staff.isActive });
+                    setShowEditModal(true);
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
                 Edit Cleaner
+              </button>
+              <button
+                onClick={() => {
+                  const staff = (staffData || []).find((s: any) => s.id.substring(0, 8).toUpperCase() === selectedCleaner);
+                  if (staff) {
+                    setEditStaffId(staff.id);
+                    setShowDeleteConfirm(true);
+                  }
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Delete
               </button>
               <Link href="/admin/bookings" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                 Assign Booking
@@ -614,47 +735,79 @@ export default function AdminCleaners() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input type="text" className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="John Doe" />
+                <input type="text" value={addForm.name} onChange={(e) => setAddForm({ ...addForm, name: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="John Doe" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="john@cleanpro.com.au" />
+                <input type="email" value={addForm.email} onChange={(e) => setAddForm({ ...addForm, email: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="john@cleanpro.com.au" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" value={addForm.password} onChange={(e) => setAddForm({ ...addForm, password: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Min 8 characters" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <input type="tel" className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="04XX XXX XXX" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Suburb</label>
-                <input type="text" className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Bondi" />
+                <input type="tel" value={addForm.phone} onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="04XX XXX XXX" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Hourly Rate ($)</label>
-                <input type="number" className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="30" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Specialties</label>
-                <select multiple className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option>Standard Cleaning</option>
-                  <option>Deep Cleaning</option>
-                  <option>End of Lease</option>
-                  <option>Office Cleaning</option>
-                  <option>Carpet Cleaning</option>
-                  <option>Window Cleaning</option>
-                  <option>Pressure Washing</option>
-                  <option>Garden Maintenance</option>
-                </select>
+                <input type="number" value={addForm.hourlyRate} onChange={(e) => setAddForm({ ...addForm, hourlyRate: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="30" />
               </div>
             </div>
             <div className="p-6 border-t flex gap-3 justify-end">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-              >
-                Cancel
+              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={handleAddCleaner} disabled={createStaffMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                {createStaffMutation.isPending ? 'Adding...' : 'Add Cleaner'}
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                Add Cleaner
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Cleaner Modal */}
+      {showEditModal && editStaffId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-lg font-bold">Edit Cleaner</h3>
+              <button onClick={() => setShowEditModal(false)}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hourly Rate ($)</label>
+                <input type="number" value={editForm.hourlyRate} onChange={(e) => setEditForm({ ...editForm, hourlyRate: parseFloat(e.target.value) })} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" checked={editForm.isActive} onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })} id="staffActive" className="rounded" />
+                <label htmlFor="staffActive" className="text-sm font-medium text-gray-700">Active</label>
+              </div>
+            </div>
+            <div className="p-6 border-t flex gap-3 justify-end">
+              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={handleSaveEdit} disabled={updateStaffMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                {updateStaffMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && editStaffId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="p-6 border-b">
+              <h3 className="text-lg font-bold text-red-600">Delete Cleaner</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600">Are you sure you want to delete this cleaner? They will be removed from all future bookings. This action cannot be undone.</p>
+            </div>
+            <div className="p-6 border-t flex gap-3 justify-end">
+              <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={confirmDelete} disabled={deleteStaffMutation.isPending} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+                {deleteStaffMutation.isPending ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>

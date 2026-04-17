@@ -95,7 +95,12 @@ export const servicesApi = {
 export const bookingsApi = {
   getAll: (params?: any) => api.get('/bookings', { params }),
   adminAll: (params?: any) => api.get('/bookings/admin/all', { params }),
+  adminGetOne: (id: string) => api.get(`/bookings/admin/${id}`),
   assignStaff: (id: string, data: { staffId: string }) => api.put(`/bookings/admin/${id}/assign`, data),
+  adminUpdate: (id: string, data: any) => api.put(`/bookings/admin/${id}`, data),
+  adminDelete: (id: string) => api.delete(`/bookings/admin/${id}`),
+  bulkConfirm: (bookingIds: string[]) => api.post('/bookings/admin/bulk-confirm', { bookingIds }),
+  bulkCancel: (bookingIds: string[]) => api.post('/bookings/admin/bulk-cancel', { bookingIds }),
   create: (data: any) => api.post('/bookings', data),
   getById: (id: string) => api.get(`/bookings/${id}`),
   cancel: (id: string) => api.put(`/bookings/${id}/cancel`),
@@ -123,9 +128,13 @@ export const dashboardApi = {
 
 export const adminApi = {
   getUsers: (params?: any) => api.get('/admin/users', { params }),
+  getUserBookings: (userId: string, params?: any) => api.get(`/admin/users/${userId}/bookings`, { params }),
   updateUser: (id: string, data: any) => api.put(`/admin/users/${id}`, data),
+  deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
   createUser: (data: any) => api.post('/admin/users', data),
   getStaff: () => api.get('/admin/staff'),
   createStaff: (data: any) => api.post('/admin/staff', data),
+  updateStaff: (id: string, data: any) => api.put(`/admin/staff/${id}`, data),
+  deleteStaff: (id: string) => api.delete(`/admin/staff/${id}`),
   getAnalytics: () => api.get('/admin/analytics'),
 };
